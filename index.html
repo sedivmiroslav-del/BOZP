@@ -6,8 +6,10 @@
   <title>BOZP Hodnotenie pracovísk</title>
   <meta name="description" content="Aplikácia na hodnotenie BOZP na pracoviskách s importom Excelu, úlohami, prehľadmi a podporou cloudu (Gist) + fotky v GitHub repozitári." />
   <link rel="icon" href="./assets/img/favicon.ico" type="image/x-icon">
+  <!-- Knižnice -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root {
       --green: rgb(0,137,6);
@@ -98,6 +100,7 @@
 
     .chart-section { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
 
+    /* Témy pod sebou (1 stĺpec) */
     .assessment-form .topics-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
     .topic-card { border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; background: var(--white); }
     .topic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -112,7 +115,7 @@
 
     .app-footer { padding: 14px clamp(16px,4vw,32px); border-top: 1px solid var(--light-gray); color: var(--gray); background: rgba(206,213,218,.15); text-align: center; }
 
-    /* Cloud panel */
+    /* Panel Cloud (spodný) */
     .cloudWrap{position:relative}
     #cloudBtn{position:relative}
     #cloudPopup{position:relative;background:#fff;border:1px solid var(--light-gray);border-radius:10px;padding:10px;box-shadow:var(--shadow);min-width:320px;display:grid;gap:8px;color:#000;margin-top:10px}
@@ -156,7 +159,6 @@
     <div class="brand">
       <h1>BOZP Hodnotenie pracovísk</h1>
     </div>
-
     <nav class="app-nav" role="navigation" aria-label="Hlavná navigácia">
       <ul>
         <li><a href="#" data-route="dashboard" class="nav-link" aria-current="page">Prehľad</a></li>
@@ -164,13 +166,12 @@
         <li><a href="#" data-route="tasks" class="nav-link">Úlohy</a></li>
         <li><a href="#" data-route="importExport" class="nav-link">Import/Export</a></li>
       </ul>
-
-      <!-- NOVÉ: Cloud akcie v hornej lište -->
+      <!-- NOVÉ: Cloud tlačidlá hore -->
       <div class="header-actions" aria-label="Cloud akcie">
-        <button id="cloudLoadBtnTop"  class="btn requires-auth" type="button" title="Načítať dáta z Gistu">Načítať</button>
-        <button id="cloudSaveBtnTop"  class="btn requires-auth" type="button" title="Uložiť dáta do Gistu">Uložiť</button>
-        <button id="cloudUploadPhotosBtnTop" class="btn requires-auth" type="button" title="Dohrať lokálne fotky do GitHub repozitára">Upload fotiek</button>
-        <button id="cloudAutoBtnTop" class="btn requires-auth" type="button" title="AutoSync JSON do Gistu">AutoSync: OFF</button>
+        <button id="cloudLoadBtnTop"   class="btn requires-auth" type="button" title="Načítať dáta z Gistu">Načítať</button>
+        <button id="cloudSaveBtnTop"   class="btn requires-auth" type="button" title="Uložiť dáta do Gistu">Uložiť</button>
+        <button id="cloudUploadBtnTop" class="btn requires-auth" type="button" title="Dohrať lokálne fotky do GitHub repozitára">Upload fotiek</button>
+        <button id="cloudAutoBtnTop"   class="btn requires-auth" type="button" title="Prepína AutoSync JSON do Gistu">AutoSync: OFF</button>
       </div>
     </nav>
   </header>
@@ -207,7 +208,6 @@
           <h3 id="chart-io-nio-title">Pomery IO vs NIO</h3>
           <canvas id="chart-io-nio" aria-label="Koláčový graf IO vs NIO" role="img"></canvas>
         </section>
-
         <section class="chart-section" aria-labelledby="chart-topics-nio-title">
           <h3 id="chart-topics-nio-title">NIO podľa tém</h3>
           <canvas id="chart-topics-nio" aria-label="Stĺpcový graf NIO podľa tém" role="img"></canvas>
@@ -294,6 +294,7 @@
         </table>
       </div>
     </section>
+
     <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
@@ -454,7 +455,7 @@
           </div>
           <div class="row">
             <label for="cloudRepoName">Repo Name</label>
-            <input id="cloudRepoName" type="text" placeholder="napr. BOZP-photos" />
+            <input id="cloudRepoName" type="text" placeholder="napr. BOZP" />
           </div>
           <div class="row">
             <label for="cloudRepoBranch">Repo Branch</label>
@@ -475,13 +476,279 @@
     </div>
   </div>
 
-  <!-- DB a logika ... (bez zmien oproti predchádzajúcej verzii, skrátené kvôli dĺžke) -->
-  <!-- ... POZOR: celý DB a logika (vrátane funkcií cloudLoad/cloudSave/uploadPendingPhotos/tryUploadPhoto) ostávajú rovnaké ako v tvojej poslednej verzii. -->
+  <!-- DB (IndexedDB) + in-memory fallback -->
+  <script>
+    (function(){
+      const DB_NAME = 'bozpAppDB';
+      const DB_VERSION = 1;
+      const LS_REMOTE_UPDATED_AT = 'bozpApp/remoteUpdatedAt';
 
-  <!-- Charts helper (bez zmien) -->
-  <!-- ... -->
+      let useMemory = false;
+      const mem = {
+        workplaces: [],
+        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
+        tasks: [],
+        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
+        ids: { workplace: 1, task: 1, photo: 1 }
+      };
 
-  <!-- Main logic + routing + bindCloudUI s napojením horných tlačidiel -->
+      function enableMemoryFallback(reason){
+        console.warn('IndexedDB unavailable, using in-memory fallback. Reason:', reason);
+        useMemory = true;
+      }
+
+      function openDb(){
+        return new Promise((resolve) => {
+          if (!window.indexedDB) { enableMemoryFallback('no indexedDB'); resolve(null); return; }
+          try {
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+            req.onupgradeneeded = () => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains('workplaces')) db.createObjectStore('workplaces', { keyPath: 'id', autoIncrement: true });
+              if (!db.objectStoreNames.contains('assessments')) db.createObjectStore('assessments', { keyPath: 'workplaceId' });
+              if (!db.objectStoreNames.contains('tasks')) {
+                const store = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('status', 'status', { unique: false });
+              }
+              if (!db.objectStoreNames.contains('photos')) {
+                const store = db.createObjectStore('photos', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('taskId', 'taskId', { unique: false });
+              }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror   = () => { enableMemoryFallback(req.error?.name || req.error || 'open error'); resolve(null); };
+          } catch (err) {
+            enableMemoryFallback(err?.message || err);
+            resolve(null);
+          }
+        });
+      }
+
+      function tx(db, stores, mode){ if(!db) return null; return db.transaction(stores, mode); }
+      function getAll(store){ return new Promise((resolve, reject) => {
+        if ('getAll' in store) {
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => reject(req.error);
+        } else {
+          const out = [];
+          const req = store.openCursor();
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) { out.push(cursor.value); cursor.continue(); }
+            else resolve(out);
+          };
+          req.onerror = () => reject(req.error);
+        }
+      }); }
+      function getIndexAll(index, key){ return new Promise((res,rej)=>{ const out=[]; const r=index.openCursor(key); r.onsuccess=e=>{const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(out);}; r.onerror=()=>rej(r.error); }); }
+      function getByKey(store, key){ return new Promise((res,rej)=>{ const r=store.get(key); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
+      function put(store, value){ return new Promise((res,rej)=>{ const r=store.put(value); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+      function add(store, value){ return new Promise((res,rej)=>{ const r=store.add(value); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+      function del(store, key){ return new Promise((res,rej)=>{ const r=store.delete(key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+
+      window.DB = {
+        async addWorkplace(w){
+          const db = await openDb();
+          const rec = { segment:String(w.segment||'').trim(), costCenter:String(w.costCenter||'').trim(), equipment:String(w.equipment||'').trim(), machineName:String(w.machineName||'').trim(), createdAt:Date.now() };
+          if (useMemory) { const id = mem.ids.workplace++; mem.workplaces.push({ id, ...rec }); return id; }
+          const t = tx(db, ['workplaces'], 'readwrite');
+          return await add(t.objectStore('workplaces'), rec);
+        },
+        async listWorkplaces(){
+          const db = await openDb(); if (useMemory) return [...mem.workplaces];
+          const t = tx(db, ['workplaces'], 'readonly');
+          return await getAll(t.objectStore('workplaces'));
+        },
+        async deleteWorkplace(id){
+          const db = await openDb();
+          if (useMemory) {
+            mem.workplaces = mem.workplaces.filter(w => w.id !== id);
+            mem.assessments.delete(id);
+            const tids = mem.tasks.filter(t => t.workplaceId === id).map(t => t.id);
+            mem.tasks = mem.tasks.filter(t => t.workplaceId !== id);
+            mem.photos = mem.photos.filter(p => !tids.includes(p.taskId));
+            return;
+          }
+          await del(tx(db, ['workplaces'], 'readwrite').objectStore('workplaces'), id);
+          await del(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), id);
+          const t = tx(db, ['tasks','photos'], 'readwrite');
+          const tasks = await getAll(t.objectStore('tasks'));
+          const tids = tasks.filter(x => x.workplaceId === id).map(x => x.id);
+          for (const tid of tids) await del(t.objectStore('tasks'), tid);
+          const idx = t.objectStore('photos').index('taskId');
+          for (const tid of tids) {
+            const phs = await getIndexAll(idx, tid);
+            for (const p of phs) await del(t.objectStore('photos'), p.id);
+          }
+        },
+
+        async getAssessment(workplaceId){
+          const db = await openDb();
+          if (useMemory) return mem.assessments.get(workplaceId) || null;
+          return await getByKey(tx(db, ['assessments'], 'readonly').objectStore('assessments'), workplaceId);
+        },
+        async saveAssessment(workplaceId, statuses){
+          const db = await openDb();
+          const rec = { workplaceId, statuses:statuses||{}, savedAt:Date.now() };
+          if (useMemory) { mem.assessments.set(workplaceId, rec); return; }
+          await put(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), rec);
+        },
+
+        async listTasks(filter={}){
+          const db = await openDb();
+          const status = filter.status || '';
+          if (useMemory) {
+            const arr = [...mem.tasks];
+            return status ? arr.filter(t => t.status === status) : arr;
+          }
+          const s = tx(db, ['tasks'], 'readonly').objectStore('tasks');
+          return status ? await getIndexAll(s.index('status'), status) : await getAll(s);
+        },
+        async addTask(task){
+          const db = await openDb();
+          const rec = { workplaceId:task.workplaceId, topicKey:task.topicKey, responsible:task.responsible||'', dueDate:task.dueDate||null, status:task.status||'Otvorená', createdAt:Date.now() };
+          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id,...rec}); return id; }
+          return await add(tx(db,['tasks'],'readwrite').objectStore('tasks'), rec);
+        },
+        async updateTask(task){
+          const db = await openDb();
+          if (useMemory) { const i=mem.tasks.findIndex(x=>x.id===task.id); if(i>=0) mem.tasks[i]={...mem.tasks[i],...task}; return; }
+          await put(tx(db,['tasks'],'readwrite').objectStore('tasks'), task);
+        },
+        async deleteTask(id){
+          const db = await openDb();
+          if (useMemory) { mem.tasks = mem.tasks.filter(t => t.id!==id); mem.photos = mem.photos.filter(p => p.taskId!==id); return; }
+          await del(tx(db,['tasks'],'readwrite').objectStore('tasks'), id);
+          const t = tx(db,['photos'],'readwrite'); const idx=t.objectStore('photos').index('taskId'); const ph=await getIndexAll(idx,id);
+          for (const p of ph) await del(t.objectStore('photos'), p.id);
+        },
+
+        async addPhoto(taskId, workplaceId, topicKey, file){
+          const db = await openDb();
+          let type = file?.type || 'application/octet-stream';
+          let size = file?.size || 0;
+          const name = file?.name || 'photo';
+          let blob;
+          try { const buf = await file.arrayBuffer(); blob = new Blob([buf], { type }); }
+          catch { blob = file || new Blob([], { type }); }
+          const rec = { taskId, workplaceId:workplaceId||null, topicKey:topicKey||null, name, type, size, blob, createdAt:Date.now(), remoteUrl:null, remoteSha:null, uploadedAt:null };
+          if (useMemory) { const id=mem.ids.photo++; mem.photos.push({id,...rec}); return id; }
+          return await add(tx(db,['photos'],'readwrite').objectStore('photos'), rec);
+        },
+        async listPhotosByTask(taskId){
+          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).sort((a,b)=>a.createdAt-b.createdAt);
+          const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId');
+          const arr = await getIndexAll(idx, taskId);
+          return arr.sort((a,b)=>a.createdAt-b.createdAt);
+        },
+        async countPhotosForTask(taskId){
+          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).length;
+          const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId'); const arr=await getIndexAll(idx, taskId); return arr.length;
+        },
+        async updatePhoto(photo){
+          const db = await openDb();
+          if (useMemory) { const i=mem.photos.findIndex(x=>x.id===photo.id); if(i>=0) mem.photos[i]={...mem.photos[i],...photo}; return; }
+          await put(tx(db,['photos'],'readwrite').objectStore('photos'), photo);
+        },
+        async getPhoto(id){
+          const db = await openDb();
+          if (useMemory) return mem.photos.find(p=>p.id===id)||null;
+          return await getByKey(tx(db,['photos'],'readonly').objectStore('photos'), id);
+        },
+        async listAllPhotos(){
+          const db = await openDb();
+          if (useMemory) return [...mem.photos];
+          return await getAll(tx(db,['photos'],'readonly').objectStore('photos'));
+        },
+
+        async exportJSON(){
+          const workplaces = await this.listWorkplaces();
+          const tasks = await this.listTasks();
+          const assessments = [];
+          for (const w of workplaces) { const a = await this.getAssessment(w.id); if (a) assessments.push(a); }
+          const photos = await this.listAllPhotos();
+          const photosLight = photos.map(p => ({
+            id: p.id, taskId: p.taskId, workplaceId: p.workplaceId, topicKey: p.topicKey,
+            name: p.name, type: p.type, size: p.size, createdAt: p.createdAt,
+            remoteUrl: p.remoteUrl || null
+          }));
+          const meta = { version: 3, updatedAt: Date.now() };
+          return { meta, workplaces, tasks, assessments, photos: photosLight };
+        },
+
+        async importJSON(data){
+          const db = await openDb();
+          const srcW = data.workplaces || [];
+          const srcA = data.assessments || [];
+          const srcT = data.tasks || [];
+          const srcP = data.photos || [];
+
+          if (useMemory) {
+            mem.workplaces = srcW.map(w=>({...w}));
+            mem.assessments = new Map(); for (const a of srcA) mem.assessments.set(a.workplaceId, {...a});
+            mem.tasks = srcT.map(t=>({...t}));
+            mem.photos = srcP.map(p=>({ id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null }));
+            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id))||0)+1;
+            mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id))||0)+1;
+            mem.ids.photo = (Math.max(0, ...mem.photos.map(p=>p.id))||0)+1;
+            try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
+            return;
+          }
+
+          // wipe
+          {
+            const t = tx(db,['workplaces','assessments','tasks','photos'],'readwrite');
+            for (const s of ['workplaces','assessments','tasks','photos']) {
+              const st = t.objectStore(s); const items = await getAll(st);
+              for (const it of items) await del(st, it[st.keyPath]);
+            }
+          }
+          // import
+          {
+            const t = tx(db,['workplaces','assessments','tasks','photos'],'readwrite');
+            const wS=t.objectStore('workplaces'), aS=t.objectStore('assessments'), tS=t.objectStore('tasks'), pS=t.objectStore('photos');
+            for (const w of srcW) await put(wS, w);
+            for (const a of srcA) await put(aS, a);
+            for (const ta of srcT) await put(tS, ta);
+            for (const p of srcP) {
+              await put(pS, { id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null });
+            }
+          }
+          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
+        }
+      };
+    })();
+  </script>
+
+  <!-- Charts helper -->
+  <script>
+    (function(){
+      const CHART_TOPICS = [
+        {key:'ovladacie_panely', name:'ovládacie panely'},
+        {key:'suporty', name:'suporty'},
+        {key:'koncove_spinace', name:'koncové spínače'},
+        {key:'zlaby_listy', name:'žľaby, lišty'},
+        {key:'zaseknute_diely', name:'zaseknuté diely'},
+        {key:'zakonne_skolenia_podnikove', name:'zákonné školenia podnikové'},
+        {key:'matica_kvalifikacie', name:'matica kvalifikácie'},
+        {key:'skoliace_materialy_nnos', name:'školiace materiály (NnOS)'},
+        {key:'postupy_pretypovania', name:'postupy pretypovania'},
+        {key:'cistiace_inspekcne_plany', name:'čistiace a inšpekčné plány'},
+        {key:'analyza_rizik', name:'analýza rizík'},
+        {key:'kontrolne_mechanizmy', name:'kontrolné mechanizmy'},
+        {key:'revizia_pracoviska_ce', name:'revízia pracoviska (CE)'},
+        {key:'prebierka_stroja', name:'prebierka stroja'}
+      ];
+      let chartPie=null, chartBar=null;
+
+      function renderPie(ioCount, nioCount){ const ctx=document.getElementById('chart-io-nio').getContext('2d'); if(chartPie) chartPie.destroy(); chartPie=new Chart(ctx,{type:'pie',data:{labels:['IO','NIO'],datasets:[{data:[ioCount,nioCount],backgroundColor:['rgb(161,200,97)','rgb(255,255,96)'],borderColor:['rgb(0,0,0)','rgb(0,0,0)'],borderWidth:1}]},options:{plugins:{legend:{position:'bottom'}}}}); }
+      function renderBar(topicNioCounts){ const ctx=document.getElementById('chart-topics-nio').getContext('2d'); if(chartBar) chartBar.destroy(); chartBar=new Chart(ctx,{type:'bar',data:{labels:CHART_TOPICS.map(t=>t.name),datasets:[{label:'Počet NIO',data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),backgroundColor:'rgb(29,155,178)',borderColor:'rgb(0,0,0)',borderWidth:1}]},options:{indexAxis:'x',scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{position:'bottom'}}}}); }
+      window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
+    })();
+  </script>
+
+  <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
       const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
@@ -493,6 +760,7 @@
       const AUTH_PASSWORD = '31104986';
       const LS_AUTH_KEY  = 'bozpApp/authed';
       const LS_SYNC_CREDS_KEY = 'bozpApp/cloudCreds';
+      const LS_REMOTE_UPDATED_AT = 'bozpApp/remoteUpdatedAt';
       const GIST_FILE_NAME = 'bozp_export.json';
 
       let syncCreds = null;
@@ -517,7 +785,8 @@
             ccEl.addEventListener(ev, updateDashboard);
           });
           document.getElementById('btn-clear-filters').addEventListener('click', () => {
-            segEl.value = ''; ccEl.value = ''; updateDashboard();
+            segEl.value = ''; ccEl.value = '';
+            updateDashboard();
           });
           updateDashboard();
         });
@@ -533,197 +802,720 @@
       }
 
       function initRouting(){
-        const links = document.querySelectorAll('.nav-link');
-        links.forEach(a => a.addEventListener('click', (e) => {
-          e.preventDefault();
-          navigate(a.getAttribute('data-route'));
-        }));
+        document.querySelectorAll('.nav-link').forEach(a => {
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigate(a.getAttribute('data-route'));
+          });
+        });
         navigate('dashboard');
       }
-      function navigate(route) {
+      function navigate(route){
         ROUTES.forEach(r => {
           const v = document.getElementById(`view-${r}`);
           const l = document.querySelector(`.nav-link[data-route="${r}"]`);
-          if (v) {
-            const active = r === route;
-            v.hidden = !active;
-            if (l) { if (active) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current'); }
-          }
+          if (!v) return;
+          const active = r === route;
+          v.hidden = !active;
+          if (l) { if (active) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current'); }
         });
       }
 
-      function createEl(tag, attrs = {}, children = []) {
+      function createEl(tag, attrs={}, children=[]){
         const el = document.createElement(tag);
-        Object.entries(attrs).forEach(([k, v]) => { if (k === 'class') el.className = v; else if (k === 'html') el.innerHTML = v; else el.setAttribute(k, v); });
+        Object.entries(attrs).forEach(([k,v]) => { if (k==='class') el.className=v; else if (k==='html') el.innerHTML=v; else el.setAttribute(k,v); });
         children.forEach(ch => el.appendChild(ch));
         return el;
       }
-      function fmtDate(d) { if (!d) return ''; const dt = new Date(d); return dt.toLocaleDateString(); }
-      function downloadBlob(blob, filename) {
-        const url = URL.createObjectURL(blob); const a = document.createElement('a');
-        a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      }
-      function toCSV(rows, headers) {
-        const esc = (v) => {
-          if (v == null) return '';
-          const s = String(v);
-          if (s.includes('"') || s.includes(';') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
-          return s;
-        };
-        const h = headers.join(';');
-        const body = rows.map(r => headers.map(h => esc(r[h])).join(';')).join('\n');
-        return h + '\n' + body;
-      }
+      function fmtDate(d){ if (!d) return ''; const dt=new Date(d); return dt.toLocaleDateString(); }
+      function downloadBlob(blob, name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+      function toCSV(rows, headers){ const esc=v=>{ if(v==null) return ''; const s=String(v); if(s.includes('"')||s.includes(';')||s.includes('\n')) return `"${s.replace(/"/g,'""')}"`; return s; }; const head=headers.join(';'); const body=rows.map(r=>headers.map(h=>esc(r[h])).join(';')).join('\n'); return head+'\n'+body; }
 
-      async function refreshFilters() {
+      async function refreshFilters(){
         const workplaces = await DB.listWorkplaces();
-        const segments = Array.from(new Set(workplaces.map(w => w.segment))).sort();
-        const costCenters = Array.from(new Set(workplaces.map(w => w.costCenter))).sort();
-
-        const fillSelect = (sel, items) => {
-          sel.innerHTML = '<option value="">Všetko</option>';
-          items.forEach(i => { const opt = createEl('option', { value: i }); opt.textContent = i; sel.appendChild(opt); });
+        const segments = Array.from(new Set(workplaces.map(w=>w.segment))).sort();
+        const costCenters = Array.from(new Set(workplaces.map(w=>w.costCenter))).sort();
+        const fill = (selId, items) => {
+          const sel=document.getElementById(selId);
+          sel.innerHTML='<option value="">Všetko</option>';
+          items.forEach(i=>{ const o=document.createElement('option'); o.value=i; o.textContent=i; sel.appendChild(o); });
         };
-
-        fillSelect(document.getElementById('filter-segment'), segments);
-        fillSelect(document.getElementById('filter-costcenter'), costCenters);
-        fillSelect(document.getElementById('filter-task-segment'), segments);
-        fillSelect(document.getElementById('filter-task-costcenter'), costCenters);
+        fill('filter-segment', segments);
+        fill('filter-costcenter', costCenters);
+        fill('filter-task-segment', segments);
+        fill('filter-task-costcenter', costCenters);
       }
 
-      async function updateDashboard() {
+      async function updateDashboard(){
         const seg = document.getElementById('filter-segment').value || '';
         const cc  = document.getElementById('filter-costcenter').value || '';
-
         const workplaces = await DB.listWorkplaces();
-        const filteredWorkplaces = workplaces.filter(w => (!seg || w.segment === seg) && (!cc || w.costCenter === cc));
-
+        const ws = workplaces.filter(w => (!seg || w.segment===seg) && (!cc || w.costCenter===cc));
         const assessments = [];
-        for (const w of filteredWorkplaces) assessments.push(await DB.getAssessment(w.id));
-
-        const totalWorkplaces = filteredWorkplaces.length;
-        const assessedWorkplaces = assessments.filter(a => a && a.statuses && Object.keys(a.statuses).length > 0).length;
-
-        let ioTotal = 0, nioTotal = 0;
-        const topicNioCounts = {}; TOPICS_LIST.forEach(t => topicNioCounts[t.key] = 0);
-
-        assessments.forEach(a => {
+        for (const w of ws) assessments.push(await DB.getAssessment(w.id));
+        const total = ws.length;
+        const assessed = assessments.filter(a => a && a.statuses && Object.keys(a.statuses).length>0).length;
+        let io=0, nio=0;
+        const topicNioCounts={}; TOPICS_LIST.forEach(t=>topicNioCounts[t.key]=0);
+        assessments.forEach(a=>{
           if (!a || !a.statuses) return;
-          Object.entries(a.statuses).forEach(([topicKey, val]) => {
-            if (val === 'IO') ioTotal++;
-            else if (val === 'NIO') { nioTotal++; topicNioCounts[topicKey] = (topicNioCounts[topicKey] || 0) + 1; }
+          Object.entries(a.statuses).forEach(([key,val])=>{
+            if (val==='IO') io++; else if (val==='NIO'){ nio++; topicNioCounts[key]=(topicNioCounts[key]||0)+1; }
           });
         });
-
-        const percentIO  = (ioTotal + nioTotal) > 0 ? Math.round((ioTotal / (ioTotal + nioTotal)) * 100) : 0;
-        const percentNIO = 100 - percentIO;
-
-        document.getElementById('stat-total-workplaces').textContent   = totalWorkplaces;
-        document.getElementById('stat-assessed-workplaces').textContent= assessedWorkplaces;
-        document.getElementById('stat-io-percent').textContent         = percentIO + '%';
-        document.getElementById('stat-nio-percent').textContent        = percentNIO + '%';
-
-        Charts.renderPie(ioTotal, nioTotal);
+        const pIO = (io+nio)>0 ? Math.round(io/(io+nio)*100) : 0;
+        const pNIO = 100 - pIO;
+        document.getElementById('stat-total-workplaces').textContent = total;
+        document.getElementById('stat-assessed-workplaces').textContent = assessed;
+        document.getElementById('stat-io-percent').textContent = pIO+'%';
+        document.getElementById('stat-nio-percent').textContent = pNIO+'%';
+        Charts.renderPie(io, nio);
         Charts.renderBar(topicNioCounts);
       }
 
-      /* ... ostatné bind funkcie (workplaces/assessment/tasks/importExport) — bez zmeny ... */
+      function bindWorkplaces(){
+        const form = document.getElementById('form-add-workplace');
+        form.addEventListener('submit', async(e)=>{
+          e.preventDefault();
+          const data = {
+            segment:    document.getElementById('wp-segment').value,
+            costCenter: document.getElementById('wp-costcenter').value,
+            equipment:  document.getElementById('wp-equipment').value,
+            machineName:document.getElementById('wp-machine').value
+          };
+          await DB.addWorkplace(data);
+          form.reset();
+          await loadWorkplacesTable();
+          await refreshFilters();
+          await fillAssessmentSelector();
+          updateDashboard();
+        });
 
-      /* Cloud (Gist + GitHub repo photos) — napojenie horných tlačidiel */
+        ['f-segment','f-costcenter','f-equipment','f-machine'].forEach(id=>document.getElementById(id).addEventListener('input', loadWorkplacesTable));
+        document.getElementById('f-status').addEventListener('change', loadWorkplacesTable);
+        document.getElementById('f-io-min').addEventListener('input', loadWorkplacesTable);
+        document.getElementById('search-workplaces').addEventListener('input', loadWorkplacesTable);
+        document.getElementById('btn-export-workplaces').addEventListener('click', exportWorkplacesCSV);
+
+        document.getElementById('btn-download-template').addEventListener('click', ()=>{
+          const csv='Segment;Nákladové stredisko;Equipment;Názov stroja\n';
+          downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'pracoviska_sablona.csv');
+        });
+        document.getElementById('btn-import').addEventListener('click', importWorkplaces);
+
+        document.querySelectorAll('.table thead .sortable').forEach(th=>{
+          th.addEventListener('click',()=>{
+            const key=th.getAttribute('data-sort');
+            if (key===sortKey) sortDir=(sortDir==='asc')?'desc':'asc';
+            else{ sortKey=key; sortDir='asc'; }
+            updateSortIndicators();
+            loadWorkplacesTable();
+          });
+        });
+
+        loadWorkplacesTable();
+        updateSortIndicators();
+      }
+      function updateSortIndicators(){
+        document.querySelectorAll('.sort-indicator').forEach(el=>{
+          const key=el.getAttribute('data-ind');
+          el.textContent = key===sortKey ? (sortDir==='asc'?'▲':'▼') : '↕';
+        });
+      }
+
+      async function loadWorkplacesTable(){
+        const q   = (document.getElementById('search-workplaces').value||'').toLowerCase();
+        const fSeg= (document.getElementById('f-segment').value||'').toLowerCase();
+        const fCc = (document.getElementById('f-costcenter').value||'').toLowerCase();
+        const fEq = (document.getElementById('f-equipment').value||'').toLowerCase();
+        const fMa = (document.getElementById('f-machine').value||'').toLowerCase();
+        const fSt = document.getElementById('f-status').value||'';
+        const fIoMin = parseInt(document.getElementById('f-io-min').value,10);
+
+        const tbody = document.getElementById('workplaces-tbody'); tbody.innerHTML='';
+
+        const workplaces = await DB.listWorkplaces();
+        const data=[];
+        for (const w of workplaces){
+          const a = await DB.getAssessment(w.id);
+          const percent = (()=>{
+            if (!a||!a.statuses) return 0;
+            let io=0,nio=0; Object.values(a.statuses).forEach(v=>{ if(v==='IO') io++; else if(v==='NIO') nio++; });
+            const tot=io+nio; return tot>0?Math.round(io/tot*100):0;
+          })();
+          data.push({ ...w, status:(percent>0 || (a&&Object.keys(a.statuses||{}).length>0))?'Hodnotené':'Neohodnotené', ioPercent:percent });
+        }
+
+        const filtered = data.filter(w=>{
+          const hay = `${w.segment} ${w.costCenter} ${w.equipment} ${w.machineName}`.toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          if (fSeg && !String(w.segment).toLowerCase().includes(fSeg)) return false;
+          if (fCc && !String(w.costCenter).toLowerCase().includes(fCc)) return false;
+          if (fEq && !String(w.equipment).toLowerCase().includes(fEq)) return false;
+          if (fMa && !String(w.machineName).toLowerCase().includes(fMa)) return false;
+          if (fSt && w.status!==fSt) return false;
+          if (!isNaN(fIoMin) && w.ioPercent < fIoMin) return false;
+          return true;
+        });
+
+        const dir = sortDir==='asc' ? 1 : -1;
+        filtered.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='ioPercent'){va=Number(va);vb=Number(vb);} return (va>vb?1:va<vb?-1:0)*dir; });
+
+        for (const w of filtered){
+          const tr=document.createElement('tr');
+          tr.innerHTML=`
+            <td>${w.segment}</td>
+            <td>${w.costCenter}</td>
+            <td>${w.equipment}</td>
+            <td>${w.machineName}</td>
+            <td>${w.status}</td>
+            <td>${w.ioPercent}%</td>
+            <td>
+              <div class="action-group">
+                <button class="btn secondary" data-action="assess" data-id="${w.id}">Hodnotiť</button>
+                <button class="btn danger" data-action="delete" data-id="${w.id}">Zmazať</button>
+              </div>
+            </td>`;
+          tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll('button[data-action="delete"]').forEach(btn=>{
+          btn.addEventListener('click',async()=>{
+            if(!confirm('Naozaj chcete zmazať pracovisko vrátane hodnotení a úloh?')) return;
+            await DB.deleteWorkplace(Number(btn.getAttribute('data-id')));
+            await loadWorkplacesTable();
+            await refreshFilters();
+            await fillAssessmentSelector();
+            updateDashboard();
+          });
+        });
+        tbody.querySelectorAll('button[data-action="assess"]').forEach(btn=>{
+          btn.addEventListener('click',async()=>{
+            navigate('assessment');
+            await fillAssessmentSelector();
+            document.getElementById('assessment-workplace').value = btn.getAttribute('data-id');
+            document.getElementById('btn-start-assessment').click();
+          });
+        });
+      }
+
+      async function exportWorkplacesCSV(){
+        const ws = await DB.listWorkplaces();
+        const rows = ws.map(w=>({ Segment:w.segment, 'Nákladové stredisko':w.costCenter, Equipment:w.equipment, 'Názov stroja':w.machineName }));
+        const csv = toCSV(rows, ['Segment','Nákladové stredisko','Equipment','Názov stroja']);
+        downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'pracoviska.csv');
+      }
+
+      async function importWorkplaces(){
+        const f=document.getElementById('file-import'); const status=document.getElementById('import-status'); status.textContent='';
+        const file=f.files[0]; if(!file){ status.textContent='Najprv vyberte súbor.'; return; }
+        try{
+          let rows=[];
+          if(file.name.toLowerCase().endsWith('.csv')){
+            const text=await file.text();
+            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v && v.trim().length>0));
+          }else{
+            const data=new Uint8Array(await file.arrayBuffer());
+            const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
+            const arr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
+            rows=arr.filter(r=>r.length>=4 && r.some(v=>v && String(v).trim().length>0));
+          }
+          let imported=0;
+          for(const r of rows){
+            const segment=String(r[0]||'').trim(), costCenter=String(r[1]||'').trim(), equipment=String(r[2]||'').trim(), machineName=String(r[3]||'').trim();
+            if(!segment||!costCenter||!equipment||!machineName) continue;
+            await DB.addWorkplace({segment,costCenter,equipment,machineName}); imported++;
+          }
+          status.textContent=`Importovaných pracovísk: ${imported}`; f.value='';
+          await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard();
+        }catch(e){ console.error(e); status.textContent='Chyba pri importe súboru.'; }
+      }
+
+      function bindAssessment(){
+        fillAssessmentSelector();
+        document.getElementById('btn-start-assessment').addEventListener('click', startAssessment);
+        document.getElementById('btn-clear-assessment').addEventListener('click', ()=>{
+          document.getElementById('form-assessment').reset();
+          document.getElementById('topics-container').innerHTML='';
+          document.getElementById('form-assessment').hidden=true;
+        });
+        document.getElementById('form-assessment').addEventListener('submit', saveAssessmentForm);
+      }
+
+      async function fillAssessmentSelector(){
+        const sel=document.getElementById('assessment-workplace'); const prev=sel.value;
+        sel.innerHTML='<option value="">-- vyber --</option>';
+        const ws=await DB.listWorkplaces();
+        ws.forEach(w=>{ const o=document.createElement('option'); o.value=w.id; o.textContent=`${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}`; sel.appendChild(o); });
+        sel.value=prev||'';
+      }
+
+      async function startAssessment(){
+        const workplaceId=Number(document.getElementById('assessment-workplace').value);
+        if(!workplaceId){ alert('Prosím vyberte pracovisko.'); return; }
+        const assessment=await DB.getAssessment(workplaceId);
+        const statuses=assessment?.statuses || {};
+        const c=document.getElementById('topics-container'); c.innerHTML='';
+        TOPICS_LIST.forEach(t=>c.appendChild(createTopicCard(t, statuses[t.key]||null, workplaceId)));
+        document.getElementById('form-assessment').hidden=false;
+      }
+
+      function createTopicCard(topic, currentStatus, workplaceId){
+        const card=createEl('div',{class:'topic-card','data-topic':topic.key});
+        const header=createEl('div',{class:'topic-header'});
+        const title=createEl('h3'); title.textContent=topic.name;
+        const badge=createEl('span',{class:'badge '+(currentStatus==='NIO'?'nio':currentStatus==='IO'?'io':''),'data-badge':''}); badge.textContent=currentStatus||'N/A';
+        header.appendChild(title); header.appendChild(badge);
+        const body=createEl('div',{class:'topic-body'});
+
+        const radiosWrap=createEl('div',{});
+        const ioId=`io-${topic.key}`, nioId=`nio-${topic.key}`;
+        const io=createEl('input',{type:'radio',name:`status-${topic.key}`,id:ioId,value:'IO'});
+        const ioLbl=createEl('label',{for:ioId}); ioLbl.textContent='IO';
+        const nio=createEl('input',{type:'radio',name:`status-${topic.key}`,id:nioId,value:'NIO'});
+        const nioLbl=createEl('label',{for:nioId}); nioLbl.textContent='NIO';
+        if(currentStatus==='IO') io.checked=true; if(currentStatus==='NIO') nio.checked=true;
+        radiosWrap.append(io,ioLbl,nio,nioLbl); body.appendChild(radiosWrap);
+
+        const detail=createEl('div',{class:'nio-detail'});
+        const respLbl=createEl('label',{for:`resp-${topic.key}`}); respLbl.textContent='Zodpovedný';
+        const respInp=createEl('input',{id:`resp-${topic.key}`,type:'text',placeholder:'Meno priezvisko'});
+        const dueLbl=createEl('label',{for:`due-${topic.key}`}); dueLbl.textContent='Termín';
+        const dueInp=createEl('input',{id:`due-${topic.key}`,type:'date'});
+        const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
+        const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
+        const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+        body.appendChild(detail);
+
+        const updateBadge=()=>{
+          const st=io.checked?'IO':(nio.checked?'NIO':'N/A');
+          badge.textContent=st; badge.className='badge '+(st==='NIO'?'nio':st==='IO'?'io':'');
+          detail.style.display = st==='NIO'?'grid':'none';
+          detail.style.gridTemplateColumns='200px 1fr'; detail.style.gap='8px';
+        };
+        io.addEventListener('change',updateBadge); nio.addEventListener('change',updateBadge); updateBadge();
+
+        loadExistingTaskData(workplaceId, topic.key, respInp, dueInp, photosWrap);
+
+        fileInp.addEventListener('change', async ()=>{
+          const files=Array.from(fileInp.files||[]); if(files.length>5){ alert('Maximálne 5 fotiek na tému.'); fileInp.value=''; return; }
+          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
+        });
+
+        card.append(header,body);
+        return card;
+      }
+
+      async function loadExistingTaskData(workplaceId, topicKey, respInput, dueInput, photosWrap){
+        const tasks=await DB.listTasks(); const t=tasks.find(x=>x.workplaceId===workplaceId && x.topicKey===topicKey); if(!t) return;
+        respInput.value=t.responsible||''; if(t.dueDate){ const d=new Date(t.dueDate); dueInput.value=d.toISOString().slice(0,10); }
+        const photos=await DB.listPhotosByTask(t.id); photosWrap.innerHTML='';
+        for(const p of photos){
+          let src=''; if(p.remoteUrl) src=p.remoteUrl; else if(p.blob) src=URL.createObjectURL(p.blob); else src='';
+          if(!src) continue;
+          const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`}); const name=createEl('span'); name.textContent=p.name; item.append(img,name); photosWrap.appendChild(item);
+        }
+      }
+
+      async function saveAssessmentForm(e){
+        e.preventDefault();
+        const workplaceId=Number(document.getElementById('assessment-workplace').value);
+        if(!workplaceId) return;
+
+        const statuses={}; const nioData={};
+        for(const topic of TOPICS_LIST){
+          const stIO=document.getElementById(`io-${topic.key}`).checked;
+          const stNIO=document.getElementById(`nio-${topic.key}`).checked;
+          const st=stIO?'IO':(stNIO?'NIO':null);
+          if(st) statuses[topic.key]=st;
+          if(st==='NIO'){
+            const responsible=(document.getElementById(`resp-${topic.key}`).value||'').trim();
+            const dueDate=document.getElementById(`due-${topic.key}`).value ? new Date(document.getElementById(`due-${topic.key}`).value).getTime() : null;
+            const files=Array.from(document.getElementById(`file-${topic.key}`).files||[]);
+            nioData[topic.key]={ responsible, dueDate, files };
+          }
+        }
+
+        await DB.saveAssessment(workplaceId, statuses);
+
+        const existingTasks=await DB.listTasks();
+        for(const[topicKey, info] of Object.entries(nioData)){
+          let task=existingTasks.find(t=>t.workplaceId===workplaceId && t.topicKey===topicKey);
+          let taskId;
+          if(!task){ taskId=await DB.addTask({workplaceId, topicKey, responsible:info.responsible, dueDate:info.dueDate, status:'Otvorená'}); }
+          else { task.responsible=info.responsible; task.dueDate=info.dueDate; await DB.updateTask(task); taskId=task.id; }
+
+          const already=await DB.countPhotosForTask(taskId);
+          const canAdd=Math.max(0, 5-already);
+          for(const file of info.files.slice(0, canAdd)){
+            const pid=await DB.addPhoto(taskId, workplaceId, topicKey, file);
+            await tryUploadPhoto(pid);
+          }
+        }
+
+        alert('Hodnotenie uložené.'); updateDashboard(); loadWorkplacesTable();
+      }
+
+      function bindTasks(){
+        loadTasksTable();
+        ['filter-task-status','filter-task-segment','filter-task-costcenter'].forEach(id=>document.getElementById(id).addEventListener('change', loadTasksTable));
+        document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
+      }
+
+      async function loadTasksTable(){
+        const tbody=document.getElementById('tasks-tbody'); tbody.innerHTML='';
+        const status=document.getElementById('filter-task-status').value;
+        const seg=document.getElementById('filter-task-segment').value;
+        const cc=document.getElementById('filter-task-costcenter').value;
+
+        const tasks=await DB.listTasks({status}); const workplaces=await DB.listWorkplaces(); const wpMap=new Map(workplaces.map(w=>[w.id,w]));
+
+        tasks
+        .filter(t=>{ const w=wpMap.get(t.workplaceId); if(!w) return false; const okSeg=!seg||w.segment===seg; const okCc=!cc||w.costCenter===cc; return okSeg&&okCc; })
+        .sort((a,b)=>(a.dueDate||0)-(b.dueDate||0))
+        .forEach(t=>{
+          const w=wpMap.get(t.workplaceId);
+          const tr=document.createElement('tr');
+          const overdue=t.dueDate && t.status!=='Splnená' && t.dueDate<Date.now();
+          tr.innerHTML=`
+            <td>${w ? `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}` : '-'}</td>
+            <td>${(TOPICS_LIST.find(x=>x.key===t.topicKey)?.name) || t.topicKey}</td>
+            <td>${t.responsible || '-'}</td>
+            <td>${fmtDate(t.dueDate)}</td>
+            <td>
+              <select data-action="set-status" data-id="${t.id}">
+                <option value="Otvorená" ${t.status==='Otvorená'?'selected':''}>Otvorená</option>
+                <option value="V riešení" ${t.status==='V riešení'?'selected':''}>V riešení</option>
+                <option value="Splnená" ${t.status==='Splnená'?'selected':''}>Splnená</option>
+              </select>
+              ${overdue ? '<span class="badge nio" title="Po termíne">Po termíne</span>' : ''}
+            </td>
+            <td>
+              <button class="btn secondary" data-action="show-photos" data-id="${t.id}">Zobraziť</button>
+              <input type="file" accept="image/*" multiple data-action="add-photos" data-id="${t.id}" />
+            </td>
+            <td><button class="btn danger" data-action="delete-task" data-id="${t.id}">Zmazať</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('select[data-action="set-status"]').forEach(sel=>{
+          sel.addEventListener('change',async()=>{
+            const id=Number(sel.getAttribute('data-id'));
+            const tasks=await DB.listTasks(); const t=tasks.find(x=>x.id===id); if(!t) return;
+            t.status=sel.value; await DB.updateTask(t); loadTasksTable();
+          });
+        });
+
+        tbody.querySelectorAll('button[data-action="show-photos"]').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            const id=Number(btn.getAttribute('data-id'));
+            const photos=await DB.listPhotosByTask(id);
+            const modalBody=document.getElementById('modal-body'); modalBody.innerHTML='';
+            for(const p of photos){ const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : ''); if(!src) continue; const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img); }
+            openModal();
+          });
+        });
+
+        tbody.querySelectorAll('input[data-action="add-photos"]').forEach(input=>{
+          input.addEventListener('change', async ()=>{
+            const id=Number(input.getAttribute('data-id'));
+            const already=await DB.countPhotosForTask(id);
+            const files=Array.from(input.files||[]);
+            for(const f of files.slice(0, Math.max(0,5-already))){
+              const pid=await DB.addPhoto(id, null, null, f);
+              await tryUploadPhoto(pid);
+            }
+            input.value=''; loadTasksTable();
+          });
+        });
+
+        tbody.querySelectorAll('button[data-action="delete-task"]').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            if(!confirm('Zmazať úlohu?')) return;
+            const id=Number(btn.getAttribute('data-id'));
+            await DB.deleteTask(id);
+            loadTasksTable();
+          });
+        });
+      }
+
+      async function exportTasksCSV(){
+        const tasks=await DB.listTasks(); const workplaces=await DB.listWorkplaces(); const wpMap=new Map(workplaces.map(w=>[w.id,w]));
+        const rows=[];
+        for(const t of tasks){
+          const w=wpMap.get(t.workplaceId);
+          const photosCount=await DB.countPhotosForTask(t.id);
+          rows.push({
+            Pracovisko:w?`${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}`:'-',
+            Téma:(TOPICS_LIST.find(x=>x.key===t.topicKey)?.name)||t.topicKey,
+            Zodpovedný:t.responsible||'',
+            Termín:fmtDate(t.dueDate),
+            Stav:t.status,
+            'Počet fotiek':photosCount
+          });
+        }
+        const csv=toCSV(rows,['Pracovisko','Téma','Zodpovedný','Termín','Stav','Počet fotiek']);
+        downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'ulohy.csv');
+      }
+
+      function openModal(){ document.getElementById('modal').setAttribute('aria-hidden','false'); }
+      function closeModal(){ document.getElementById('modal').setAttribute('aria-hidden','true'); }
+
+      function bindImportExport(){
+        document.getElementById('btn-export-json').addEventListener('click', async ()=>{
+          const data=await DB.exportJSON();
+          const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+          downloadBlob(blob,'bozp_export.json');
+        });
+
+        document.getElementById('btn-import-json').addEventListener('click', async ()=>{
+          const file=document.getElementById('file-import-json').files[0];
+          const status=document.getElementById('json-import-status'); status.textContent='';
+          if(!file){ status.textContent='Vyberte JSON súbor.'; return; }
+          try{
+            const text=await file.text(); const data=JSON.parse(text); await DB.importJSON(data); status.textContent='Import úspešný.';
+            await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+          }catch(e){ console.error(e); status.textContent='Chybný JSON súbor.'; }
+        });
+      }
+
+      /* Cloud (Gist) + GitHub repo (fotky) */
+      function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
+      function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
+      function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
+      function updateRateFromHeaders(res){ const remain=res.headers.get('X-RateLimit-Remaining'); const reset=res.headers.get('X-RateLimit-Reset'); rateLimit.remaining=remain!=null?parseInt(remain,10):null; rateLimit.reset=reset!=null?parseInt(reset,10):null; }
+      function setCloudState(msg){ document.getElementById('cloudState').textContent=msg; }
+
+      function loadSyncCreds(){
+        try{ syncCreds=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); }catch{ syncCreds=null; }
+        const idTxt=syncCreds?.gistId?(syncCreds.gistId.slice(0,8)+'…'):'—';
+        const repoTxt=(syncCreds?.repoOwner&&syncCreds?.repoName)?`${syncCreds.repoOwner}/${syncCreds.repoName}`:'—';
+        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —') + (syncCreds?.auto?' • Auto':''));
+        const autoTop=document.getElementById('cloudAutoBtnTop'); if(autoTop) autoTop.textContent='AutoSync: '+(syncCreds?.auto?'ON':'OFF');
+        document.getElementById('cloudAutoBtn').textContent='AutoSync: '+(syncCreds?.auto?'ON':'OFF');
+      }
+      function saveSyncCreds(creds){
+        syncCreds={ gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), auto:!!creds.auto, repoOwner:(creds.repoOwner||'').trim(), repoName:(creds.repoName||'').trim(), repoBranch:(creds.repoBranch||'main').trim(), repoFolder:(creds.repoFolder||'bozp-photos').trim() };
+        localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(syncCreds));
+        loadSyncCreds();
+      }
+      function clearSyncCreds(){ localStorage.removeItem(LS_SYNC_CREDS_KEY); syncCreds=null; loadSyncCreds(); }
+
+      function toggleCloudPopup(show=null){
+        const pop=document.getElementById('cloudPopup'); const isShown=!pop.hasAttribute('hidden');
+        const next=(show===null)?!isShown:show; if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
+        updateLockStateUI();
+      }
+
+      async function cloudCheckRate(){
+        if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
+        try{
+          const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)}); updateRateFromHeaders(res); const j=await res.json();
+          const core=j?.resources?.core; const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
+          alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
+        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
+      }
+      async function githubGetGist(id){ const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(id),{headers:githubHeaders(false)}); updateRateFromHeaders(res); if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }
+
+      async function cloudLoad(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Načítavam…');
+          const j=await githubGetGist(syncCreds.gistId);
+          let file=j?.files?.[GIST_FILE_NAME];
+          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
+          let contentStr=file.content;
+          if(!contentStr && file.raw_url){ const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}}); updateRateFromHeaders(rawRes); contentStr=await rawRes.text(); }
+          const data=JSON.parse(contentStr); await DB.importJSON(data);
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
+          setCloudState('Načítané');
+          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
+      }
+
+      async function cloudSave(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          // ochrana pred "prepísaním novších dát staršími"
+          let remoteUpdatedAt=0;
+          try{
+            const j=await githubGetGist(syncCreds.gistId); const file=j?.files?.[GIST_FILE_NAME];
+            if(file){
+              let contentStr=file.content;
+              if(!contentStr && file.raw_url){ const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}}); updateRateFromHeaders(rawRes); contentStr=await rawRes.text(); }
+              const remote=contentStr?JSON.parse(contentStr):null; remoteUpdatedAt=remote?.meta?.updatedAt||0;
+            }
+          }catch(e){}
+
+          const lastLoadedAt=Number(localStorage.getItem(LS_REMOTE_UPDATED_AT)||'0');
+          if(remoteUpdatedAt>lastLoadedAt){
+            const proceed=confirm('V Giste sú novšie dáta z iného zariadenia. Najprv klikni „Načítať“, aby sa zosynchronizovali. Pokračovať aj tak a prepísať ich?');
+            if(!proceed){ setCloudState('Zrušené'); return; }
+          }
+
+          setCloudState('Ukladám…');
+          const payload=await DB.exportJSON();
+          const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
+          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
+          const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
+          updateRateFromHeaders(res);
+          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
+          setCloudState('Uložené');
+        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
+      }
+
+      function syncMaybeUpload(){
+        if(!syncCreds?.auto || syncBusy) return;
+        if(syncTimer) clearTimeout(syncTimer);
+        syncTimer=setTimeout(async()=>{ syncTimer=null; syncBusy=true; try{ await cloudSave(); } finally{ syncBusy=false; } }, syncBackoffMs);
+      }
+
+      // GitHub repo (photos) – bezpečné enkódovanie cesty po segmentoch
+      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
+      function buildPhotoPath(photo, fileName){
+        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
+        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
+        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
+        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
+      }
+      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
+      async function getFileSha(owner, repo, path, branch){
+        const safePath=encodePathSegments(path);
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
+        const res=await fetch(url,{headers:githubHeaders(false)}); if(res.status===404) return null; if(!res.ok) throw new Error('Get content: HTTP '+res.status); const j=await res.json(); return j.sha||null;
+      }
+      function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
+      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
+        const safePath=encodePathSegments(path);
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
+        const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
+        const res=await fetch(url,{method:'PUT',headers:githubHeaders(true),body:JSON.stringify(body)});
+        if(!res.ok){ const txt=await res.text(); console.warn('PUT failed:',res.status,txt); throw new Error(`Upload zlyhal: ${res.status} ${txt}`); }
+        return res.json();
+      }
+
+      async function tryUploadPhoto(photoId){
+        try{
+          if(!document.body.classList.contains('authed')) return;
+          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
+          const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
+          const path=buildPhotoPath(p, p.name);
+          const base64=bufToBase64(await p.blob.arrayBuffer());
+          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
+          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
+          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
+          p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
+          await DB.updatePhoto(p);
+          try{ syncMaybeUpload(); }catch(e){}
+          try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
+        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
+      }
+
+      async function uploadPendingPhotos(){
+        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
+        const all=await DB.listAllPhotos();
+        const pending=all.filter(p=>!p.remoteUrl && p.blob);
+        if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
+        let ok=0,fail=0; for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
+        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`); try{ syncMaybeUpload(); }catch(e){}
+      }
+
       function bindCloudUI(){
-        const cloudBtn  = document.getElementById('cloudBtn');
-        const cloudOverlay = document.getElementById('cloudOverlay');
-        const cloudClose   = document.getElementById('cloudClose');
-        const cloudGistIdInput = document.getElementById('cloudGistId');
-        const cloudTokenInput  = document.getElementById('cloudToken');
-        const cloudRepoOwner   = document.getElementById('cloudRepoOwner');
-        const cloudRepoName    = document.getElementById('cloudRepoName');
-        const cloudRepoBranch  = document.getElementById('cloudRepoBranch');
-        const cloudRepoFolder  = document.getElementById('cloudRepoFolder');
-        const cloudSaveCreds   = document.getElementById('cloudSaveCreds');
-        const cloudCreateGist  = document.getElementById('cloudCreateGist');
-        const cloudErrorEl     = document.getElementById('cloudError');
-        const cloudNoteEl      = document.getElementById('cloudNote');
+        const cloudBtn=document.getElementById('cloudBtn');
+        const cloudOverlay=document.getElementById('cloudOverlay');
+        const cloudClose=document.getElementById('cloudClose');
+        const cloudGistIdInput=document.getElementById('cloudGistId');
+        const cloudTokenInput=document.getElementById('cloudToken');
+        const cloudRepoOwner=document.getElementById('cloudRepoOwner');
+        const cloudRepoName=document.getElementById('cloudRepoName');
+        const cloudRepoBranch=document.getElementById('cloudRepoBranch');
+        const cloudRepoFolder=document.getElementById('cloudRepoFolder');
+        const cloudSaveCreds=document.getElementById('cloudSaveCreds');
+        const cloudCreateGist=document.getElementById('cloudCreateGist');
+        const cloudErrorEl=document.getElementById('cloudError');
+        const cloudNoteEl=document.getElementById('cloudNote');
 
-        function showCloudError(msg){ cloudErrorEl.textContent = msg; cloudErrorEl.classList.add('show'); }
+        function showCloudError(msg){ cloudErrorEl.textContent=msg; cloudErrorEl.classList.add('show'); }
         function clearCloudError(){ cloudErrorEl.textContent=''; cloudErrorEl.classList.remove('show'); }
 
-        cloudBtn.addEventListener('click', () => toggleCloudPopup());
+        cloudBtn.addEventListener('click',()=>toggleCloudPopup());
         document.addEventListener('click',(e)=>{ const pop=document.getElementById('cloudPopup'); if(!pop.hasAttribute('hidden')){ if(!e.target.closest('#cloudPopup') && !e.target.closest('#cloudBtn')) toggleCloudPopup(false); }});
 
-        document.getElementById('cloudSettingsBtn').addEventListener('click', () => {
+        document.getElementById('cloudSettingsBtn').addEventListener('click',()=>{
           clearCloudError(); cloudNoteEl.textContent='';
-          const c = syncCreds || {};
-          cloudGistIdInput.value = c.gistId || '';
-          cloudTokenInput.value  = c.token || '';
-          cloudRepoOwner.value   = c.repoOwner || '';
-          cloudRepoName.value    = c.repoName || '';
-          cloudRepoBranch.value  = c.repoBranch || 'main';
-          cloudRepoFolder.value  = c.repoFolder || 'bozp-photos';
+          const c=syncCreds||{};
+          cloudGistIdInput.value=c.gistId||''; cloudTokenInput.value=c.token||'';
+          cloudRepoOwner.value=c.repoOwner||''; cloudRepoName.value=c.repoName||'';
+          cloudRepoBranch.value=c.repoBranch||'main'; cloudRepoFolder.value=c.repoFolder||'bozp-photos';
           cloudOverlay.setAttribute('aria-hidden','false');
         });
-        cloudClose.addEventListener('click', () => cloudOverlay.setAttribute('aria-hidden','true'));
-        cloudOverlay.addEventListener('click', (e) => { if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
+        cloudClose.addEventListener('click',()=>cloudOverlay.setAttribute('aria-hidden','true'));
+        cloudOverlay.addEventListener('click',(e)=>{ if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
 
-        cloudSaveCreds.addEventListener('click', () => {
-          const creds = {
-            gistId: cloudGistIdInput.value.trim(),
-            token:  cloudTokenInput.value.trim(),
-            repoOwner: cloudRepoOwner.value.trim(),
-            repoName: cloudRepoName.value.trim(),
-            repoBranch: cloudRepoBranch.value.trim() || 'main',
-            repoFolder: cloudRepoFolder.value.trim() || 'bozp-photos',
-            auto: syncCreds?.auto||false
-          };
-          if (!creds.token) { showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
-          saveSyncCreds(creds);
-          alert('Cloud: nastavenia uložené.');
-          cloudOverlay.setAttribute('aria-hidden','true');
+        cloudSaveCreds.addEventListener('click',()=>{
+          const creds={ gistId:cloudGistIdInput.value.trim(), token:cloudTokenInput.value.trim(), repoOwner:cloudRepoOwner.value.trim(), repoName:cloudRepoName.value.trim(), repoBranch:cloudRepoBranch.value.trim()||'main', repoFolder:cloudRepoFolder.value.trim()||'bozp-photos', auto:syncCreds?.auto||false };
+          if(!creds.token){ showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
+          saveSyncCreds(creds); alert('Cloud: nastavenia uložené.'); cloudOverlay.setAttribute('aria-hidden','true');
         });
 
-        /* Existujúce dolné tlačidlá */
+        cloudCreateGist.addEventListener('click',async()=>{
+          const tk=cloudTokenInput.value.trim()||syncCreds?.token||''; if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
+          try{
+            const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
+            const res=await fetch('https://api.github.com/gists',{method:'POST',headers:githubHeadersWithToken(tk,true),body:JSON.stringify({description:'BOZP Workspace',public:false,files:{[GIST_FILE_NAME]:{content:payloadStr}}})});
+            updateRateFromHeaders(res); if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
+            const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
+          }catch(err){ showCloudError(err.message); }
+        });
+
+        // Spodné tlačidlá
         document.getElementById('cloudLoadBtn').addEventListener('click', cloudLoad);
         document.getElementById('cloudSaveBtn').addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
-        document.getElementById('cloudAutoBtn').addEventListener('click', () => {
-          const c = syncCreds || { gistId:'', token:'', auto:false };
-          c.auto = !c.auto; saveSyncCreds(c);
+        document.getElementById('cloudAutoBtn').addEventListener('click', ()=>{
+          const c=syncCreds||{gistId:'',token:'',auto:false}; c.auto=!c.auto; saveSyncCreds(c);
         });
-        document.getElementById('cloudSignOutBtn').addEventListener('click', () => { if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
+        document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
         document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
         document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
 
-        document.getElementById('unlockBtn').addEventListener('click', unlockWithPassword);
-        document.getElementById('unlockPass').addEventListener('keydown', (e) => { if(e.key==='Enter'){ e.preventDefault(); unlockWithPassword(); }});
-        document.getElementById('lockBtn').addEventListener('click', lockUI);
-
-        /* NOVÉ: horné tlačidlá v headeri */
-        const loadTop  = document.getElementById('cloudLoadBtnTop');
-        const saveTop  = document.getElementById('cloudSaveBtnTop');
-        const uploadTop= document.getElementById('cloudUploadPhotosBtnTop');
-        const autoTop  = document.getElementById('cloudAutoBtnTop');
-
-        if (loadTop)  loadTop.addEventListener('click', cloudLoad);
-        if (saveTop)  saveTop.addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
-        if (uploadTop) uploadTop.addEventListener('click', uploadPendingPhotos);
-        if (autoTop)  autoTop.addEventListener('click', () => {
-          const c = syncCreds || { gistId:'', token:'', auto:false };
-          c.auto = !c.auto; saveSyncCreds(c);
+        // Horné tlačidlá
+        const loadTop=document.getElementById('cloudLoadBtnTop');
+        const saveTop=document.getElementById('cloudSaveBtnTop');
+        const uploadTop=document.getElementById('cloudUploadBtnTop');
+        const autoTop=document.getElementById('cloudAutoBtnTop');
+        if(loadTop) loadTop.addEventListener('click', cloudLoad);
+        if(saveTop) saveTop.addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
+        if(uploadTop) uploadTop.addEventListener('click', uploadPendingPhotos);
+        if(autoTop) autoTop.addEventListener('click', ()=>{
+          const c=syncCreds||{gistId:'',token:'',auto:false}; c.auto=!c.auto; saveSyncCreds(c);
         });
+
+        document.getElementById('unlockBtn').addEventListener('click', unlockWithPassword);
+        document.getElementById('unlockPass').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); unlockWithPassword(); }});
+        document.getElementById('lockBtn').addEventListener('click', lockUI);
       }
 
       function updateLockStateUI(){
-        const lockState = document.getElementById('lockState');
-        lockState.textContent = document.body.classList.contains('authed') ? 'Odomknuté' : 'Zamknuté';
-        const errEl = document.getElementById('unlockError'); errEl.classList.remove('show'); errEl.textContent='';
+        const lockState=document.getElementById('lockState');
+        lockState.textContent=document.body.classList.contains('authed')?'Odomknuté':'Zamknuté';
+        const errEl=document.getElementById('unlockError'); errEl.classList.remove('show'); errEl.textContent='';
       }
       function applyAuthFromStorage(){
-        const unlocked = localStorage.getItem(LS_AUTH_KEY)==='1';
+        const unlocked=localStorage.getItem(LS_AUTH_KEY)==='1';
         document.body.classList.toggle('authed', !!unlocked);
-        /* aktualizuj text horného AutoSync tlačidla */
-        const autoTop = document.getElementById('cloudAutoBtnTop');
-        if (autoTop) autoTop.textContent = 'AutoSync: ' + ((JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'{}')?.auto) ? 'ON' : 'OFF');
+        const autoTop=document.getElementById('cloudAutoBtnTop');
+        if(autoTop){ const cfg=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'{}'); autoTop.textContent='AutoSync: '+(cfg?.auto?'ON':'OFF'); }
         updateLockStateUI();
       }
+      function unlockWithPassword(){
+        const pw=(document.getElementById('unlockPass').value||'').trim();
+        if(pw===AUTH_PASSWORD){ localStorage.setItem(LS_AUTH_KEY,'1'); applyAuthFromStorage(); document.getElementById('unlockPass').value=''; }
+        else{ const errEl=document.getElementById('unlockError'); errEl.textContent='Nesprávne heslo.'; errEl.classList.add('show'); }
+      }
+      function lockUI(){ localStorage.removeItem(LS_AUTH_KEY); applyAuthFromStorage(); closeModal(); }
     })();
   </script>
 </body>
