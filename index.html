@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BOZP Hodnotenie pracovísk</title>
-  <meta name="description" content="Aplikácia na hodnotenie BOZP na pracoviskách s importom Excelu, úlohami a prehľadmi. Podpora cloudu (Gist) + fotky v GitHub repozitári." />
+  <meta name="description" content="Aplikácia na hodnotenie BOZP na pracoviskách s importom Excelu, úlohami, prehľadmi a podporou cloudu (Gist) + fotky v GitHub repozitári." />
+  <link rel="icon" href="./assets/img/favicon.ico" type="image/x-icon">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -143,10 +144,18 @@
     .cloudGrid label{font-weight:600;color:#1f2937}
     .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
     .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
+
+    @media (max-width: 980px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .chart-section { margin-top: 12px; }
+      .form-row { grid-template-columns: 1fr; }
+      .topic-body { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#main"></a>
+  <a class="skip-link" href="#main">Preskočiť na hlavný obsah</a>
 
   <header class="app-header" role="banner">
     <div class="brand">
@@ -163,6 +172,7 @@
   </header>
 
   <main id="main" class="app-main" role="main">
+    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view" aria-labelledby="dashboard-title">
       <h2 id="dashboard-title">Prehľad a vizualizácie</h2>
       <div class="filters">
@@ -201,6 +211,7 @@
       </div>
     </section>
 
+    <!-- WORKPLACES -->
     <section id="view-workplaces" class="view" aria-labelledby="workplaces-title" hidden>
       <h2 id="workplaces-title">Správa pracovísk</h2>
 
@@ -279,7 +290,7 @@
         </table>
       </div>
     </section>
-
+    <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
 
@@ -301,6 +312,7 @@
       </form>
     </section>
 
+    <!-- TASKS -->
     <section id="view-tasks" class="view" aria-labelledby="tasks-title" hidden>
       <h2 id="tasks-title">Úlohy z NIO</h2>
 
@@ -343,6 +355,7 @@
       </div>
     </section>
 
+    <!-- IMPORT/EXPORT + Cloud -->
     <section id="view-importExport" class="view" aria-labelledby="importexport-title" hidden>
       <h2 id="importexport-title">Import/Export dát</h2>
 
@@ -403,6 +416,7 @@
     <p>&copy; <span id="year"></span> BOZP Hodnotenie pracovísk. Dáta sa ukladajú lokálne a voliteľne do Gistu (JSON) a do GitHub repozitára (fotky).</p>
   </footer>
 
+  <!-- Modál na zobrazenie fotiek -->
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content" role="document">
       <div class="modal-header">
@@ -413,6 +427,7 @@
     </div>
   </div>
 
+  <!-- Cloud Settings Modal (inline) -->
   <div id="cloudOverlay" class="cloudOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
     <div class="cloudModal">
       <div class="cloudHeader">
@@ -673,7 +688,7 @@
     })();
   </script>
 
-  <!-- Charts helper -->
+  <!-- Charts helper (no global TOPICS leakage) -->
   <script>
     (function(){
       const CHART_TOPICS = [
@@ -692,14 +707,55 @@
         {key:'revizia_pracoviska_ce', name:'revízia pracoviska (CE)'},
         {key:'prebierka_stroja', name:'prebierka stroja'}
       ];
+
       let chartPie=null, chartBar=null;
-      function renderPie(ioCount, nioCount){ const ctx=document.getElementById('chart-io-nio').getContext('2d'); if(chartPie) chartPie.destroy(); chartPie=new Chart(ctx,{type:'pie',data:{labels:['IO','NIO'],datasets:[{data:[ioCount,nioCount],backgroundColor:['rgb(161,200,97)','rgb(255,255,96)'],borderColor:['rgb(0,0,0)','rgb(0,0,0)'],borderWidth:1}]},options:{plugins:{legend:{position:'bottom'}}}}); }
-      function renderBar(topicNioCounts){ const ctx=document.getElementById('chart-topics-nio').getContext('2d'); if(chartBar) chartBar.destroy(); chartBar=new Chart(ctx,{type:'bar',data:{labels:CHART_TOPICS.map(t=>t.name),datasets:[{label:'Počet NIO',data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),backgroundColor:'rgb(29,155,178)',borderColor:'rgb(0,0,0)',borderWidth:1}]},options:{indexAxis:'x',scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{position:'bottom'}}}}); }
+
+      function renderPie(ioCount, nioCount) {
+        const ctx = document.getElementById('chart-io-nio').getContext('2d');
+        if (chartPie) chartPie.destroy();
+        chartPie = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: ['IO', 'NIO'],
+            datasets: [{
+              data: [ioCount, nioCount],
+              backgroundColor: ['rgb(161,200,97)', 'rgb(255,255,96)'],
+              borderColor: ['rgb(0,0,0)', 'rgb(0,0,0)'],
+              borderWidth: 1
+            }]
+          },
+          options: { plugins: { legend: { position: 'bottom' } } }
+        });
+      }
+
+      function renderBar(topicNioCounts) {
+        const ctx = document.getElementById('chart-topics-nio').getContext('2d');
+        if (chartBar) chartBar.destroy();
+        chartBar = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: CHART_TOPICS.map(t => t.name),
+            datasets: [{
+              label: 'Počet NIO',
+              data: CHART_TOPICS.map(t => topicNioCounts[t.key] || 0),
+              backgroundColor: 'rgb(29,155,178)',
+              borderColor: 'rgb(0,0,0)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            indexAxis: 'x',
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
 
-  <!-- Main logic -->
+  <!-- Main logic with AutoSync + Tasks refresh after photo upload -->
   <script>
     (function(){
       const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
@@ -752,14 +808,17 @@
 
       function initRouting(){
         const links = document.querySelectorAll('.nav-link');
-        links.forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); navigate(a.getAttribute('data-route')); }));
+        links.forEach(a => a.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigate(a.getAttribute('data-route'));
+        }));
         navigate('dashboard');
       }
       function navigate(route) {
         ROUTES.forEach(r => {
           const v = document.getElementById(`view-${r}`);
           const l = document.querySelector(`.nav-link[data-route="${r}"]`);
-          if (v) {
+        if (v) {
             const active = r === route;
             v.hidden = !active;
             if (l) { if (active) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current'); }
@@ -1102,7 +1161,7 @@
         const fileInp = createEl('input', { id: `file-${topic.key}`, type: 'file', accept: 'image/*', multiple: 'multiple' });
         const photosWrap = createEl('div', { class: 'photo-list', id: `photos-${topic.key}` });
 
-       [respLbl, respInp, dueLbl, dueInp, fileLbl, fileInp, photosWrap].forEach(el => nioDetail.appendChild(el));
+      [respLbl, respInp, dueLbl, dueInp, fileLbl, fileInp, photosWrap].forEach(el => nioDetail.appendChild(el));
         body.appendChild(nioDetail);
 
         const updateBadge = () => {
@@ -1200,7 +1259,6 @@
           const canAdd  = Math.max(0, 5 - already);
           for (const file of info.files.slice(0, canAdd)) {
             const pid = await DB.addPhoto(taskId, workplaceId, topicKey, file);
-            // pokus o upload
             await tryUploadPhoto(pid);
           }
         }
@@ -1375,7 +1433,7 @@
         });
       }
 
-      // Cloud helpers
+      /* Cloud (Gist + GitHub repo photos) */
       function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_') ? 'Bearer ' : 'token ') + t; }
       function githubHeaders(hasJson=false){
         const h = {
@@ -1430,7 +1488,6 @@
         if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
         updateLockStateUI();
       }
-
       async function cloudCheckRate(){
         if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
         try{
@@ -1498,7 +1555,7 @@
         }, syncBackoffMs);
       }
 
-      // GitHub repo (photos)
+      // GitHub repo (photos) – bezpečné enkódovanie cesty po segmentoch
       function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
       function buildPhotoPath(photo, fileName){
         const root = (syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
@@ -1506,8 +1563,12 @@
         const tk = photo.taskId ? `task-${photo.taskId}` : 'task-unknown';
         return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
       }
+      function encodePathSegments(path){
+        return String(path||'').split('/').map(seg => encodeURIComponent(seg)).join('/');
+      }
       async function getFileSha(owner, repo, path, branch){
-        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+        const safePath = encodePathSegments(path);
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
         const res = await fetch(url, { headers: githubHeaders(false) });
         if (res.status === 404) return null;
         if (!res.ok) throw new Error('Get content: HTTP '+res.status);
@@ -1521,12 +1582,14 @@
         return btoa(binary);
       }
       async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
-        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+        const safePath = encodePathSegments(path);
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
         const body = { message: message||`Add ${path}`, content: base64Content, branch: branch||'main' };
         if (sha) body.sha = sha;
         const res = await fetch(url, { method:'PUT', headers: githubHeaders(true), body: JSON.stringify(body) });
         if (!res.ok) {
           const txt = await res.text();
+          console.warn('PUT failed:', res.status, txt);
           throw new Error(`Upload zlyhal: ${res.status} ${txt}`);
         }
         return res.json();
@@ -1538,7 +1601,7 @@
           if (!syncCreds?.token || !syncCreds?.repoOwner || !syncCreds?.repoName) return;
           const p = await DB.getPhoto(photoId);
           if (!p || p.remoteUrl) return; // už je nahrané
-          if (!p.blob) return; // nemáme dáta
+          if (!p.blob) return;           // nemáme dáta
           const path = buildPhotoPath(p, p.name);
           const buf = await p.blob.arrayBuffer();
           const base64 = bufToBase64(buf);
@@ -1547,6 +1610,10 @@
           const remoteUrl = `https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
           p.remoteUrl = remoteUrl; p.remoteSha = res.content.sha || null; p.uploadedAt = Date.now();
           await DB.updatePhoto(p);
+          // AutoSync JSON po uploade (ak je zapnutý)
+          try { syncMaybeUpload(); } catch(e) {}
+          // Refresh Úloh ak je zobrazený pohľad
+          try { const tasksViewVisible = !document.getElementById('view-tasks').hidden; if (tasksViewVisible) await loadTasksTable(); } catch(e) {}
         } catch (err) {
           console.warn('Upload fotky zlyhal:', err?.message||err);
         }
@@ -1562,6 +1629,8 @@
           try { await tryUploadPhoto(p.id); ok++; } catch { fail++; }
         }
         alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
+        // AutoSync JSON po hromadnom uploade
+        try { syncMaybeUpload(); } catch(e) {}
       }
 
       function bindCloudUI(){
@@ -1676,4 +1745,3 @@
   </script>
 </body>
 </html>
-
