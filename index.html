@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BOZP Hodnotenie pracovísk</title>
-  <meta name="description" content="Aplikácia na hodnotenie BOZP na pracoviskách s importom Excelu, úlohami a prehľadmi." />
-  <!-- Chart.js CDN -->
+  <meta name="description" content="Aplikácia na hodnotenie BOZP na pracoviskách s importom Excelu, úlohami a prehľadmi. Podpora cloudu (Gist) + fotky v GitHub repozitári." />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS (XLSX) CDN -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -92,9 +90,7 @@
 
     .chart-section { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
 
-    /* Témy pod sebou (1 stĺpec) */
     .assessment-form .topics-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-
     .topic-card { border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; background: var(--white); }
     .topic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--light-gray); }
@@ -108,7 +104,6 @@
 
     .app-footer { padding: 14px clamp(16px,4vw,32px); border-top: 1px solid var(--light-gray); color: var(--gray); background: rgba(206,213,218,.15); text-align: center; }
 
-    /* Modal */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
     .modal[aria-hidden="false"] { display: flex; }
     .modal-content { background: var(--white); border-radius: var(--radius); padding: 12px; max-width: 900px; width: 96%; position: relative; box-shadow: var(--shadow); }
@@ -116,14 +111,12 @@
     .modal-body { display: flex; flex-wrap: wrap; gap: 10px; }
     .modal-body img { width: 200px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid var(--light-gray); }
 
-    /* Table filters + sorting */
     .filter-input { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid var(--light-gray); background: var(--white); }
     .table th.sortable { cursor: pointer; user-select: none; }
     .sort-indicator { margin-left: 6px; color: var(--gray); font-size: 0.85em; }
 
     .action-group { display: flex; gap: 8px; align-items: center; }
 
-    /* Cloud (Gist) styles */
     .cloudWrap{position:relative}
     #cloudBtn{position:relative}
     #cloudPopup{position:relative;background:#fff;border:1px solid var(--light-gray);border-radius:10px;padding:10px;box-shadow:var(--shadow);min-width:320px;display:grid;gap:8px;color:#000;margin-top:10px}
@@ -142,24 +135,18 @@
 
     .cloudOverlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:1000}
     .cloudOverlay[aria-hidden="false"]{display:flex}
-    .cloudModal{width:min(600px,92vw);background:#fff;border:2px solid var(--light-gray);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:#000}
+    .cloudModal{width:min(680px,92vw);background:#fff;border:2px solid var(--light-gray);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:#000}
     .cloudHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-bottom:2px solid var(--light-gray)}
     .cloudBody{padding:12px;display:grid;gap:12px}
     .cloudGrid{display:grid;gap:10px}
+    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:center}
     .cloudGrid label{font-weight:600;color:#1f2937}
     .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
     .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
-
-    @media (max-width: 980px) {
-      .cards { grid-template-columns: repeat(2, 1fr); }
-      .grid-2 { grid-template-columns: 1fr; }
-      .chart-section { margin-top: 12px; }
-      .form-row { grid-template-columns: 1fr; }
-      .topic-body { grid-template-columns: 1fr; }
-    }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main">Preskočiť na hlavný obsah</a>
 
   <header class="app-header" role="banner">
     <div class="brand">
@@ -176,7 +163,6 @@
   </header>
 
   <main id="main" class="app-main" role="main">
-    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view" aria-labelledby="dashboard-title">
       <h2 id="dashboard-title">Prehľad a vizualizácie</h2>
       <div class="filters">
@@ -215,7 +201,6 @@
       </div>
     </section>
 
-    <!-- WORKPLACES -->
     <section id="view-workplaces" class="view" aria-labelledby="workplaces-title" hidden>
       <h2 id="workplaces-title">Správa pracovísk</h2>
 
@@ -295,7 +280,6 @@
       </div>
     </section>
 
-    <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
 
@@ -317,7 +301,6 @@
       </form>
     </section>
 
-    <!-- TASKS -->
     <section id="view-tasks" class="view" aria-labelledby="tasks-title" hidden>
       <h2 id="tasks-title">Úlohy z NIO</h2>
 
@@ -360,14 +343,13 @@
       </div>
     </section>
 
-    <!-- IMPORT/EXPORT + Cloud -->
     <section id="view-importExport" class="view" aria-labelledby="importexport-title" hidden>
       <h2 id="importexport-title">Import/Export dát</h2>
 
       <div class="grid-2">
         <div class="panel">
           <h3>Export databázy</h3>
-          <p>Export všetkých dát (JSON) pre zálohu.</p>
+          <p>Export všetkých dát (JSON) pre zálohu. Fotky sa neexportujú binárne, iba ako odkazy (remoteUrl).</p>
           <button id="btn-export-json" class="btn primary">Export JSON</button>
         </div>
 
@@ -380,9 +362,8 @@
         </div>
       </div>
 
-      <!-- Cloud (Gist) UI -->
       <div class="panel" style="margin-top:16px">
-        <h3>Cloud (GitHub Gist)</h3>
+        <h3>Cloud (GitHub Gist + fotky do GitHub repo)</h3>
         <div class="cloudWrap">
           <button id="cloudBtn" class="btn secondary" type="button">Cloud ▾</button>
           <div id="cloudPopup" hidden>
@@ -402,14 +383,16 @@
             <div id="unlockError" class="cloudError" role="alert" aria-live="assertive"></div>
 
             <div class="cloudActions" style="margin-top:6px">
-              <button id="cloudSettingsBtn" class="cloudBtn" type="button">Nastaviť ID + Token</button>
+              <button id="cloudSettingsBtn" class="cloudBtn" type="button">Nastaviť ID + Token + Repo</button>
               <button id="cloudLoadBtn" class="cloudBtn requires-auth" type="button">Načítať</button>
               <button id="cloudSaveBtn" class="cloudBtn requires-auth" type="button">Uložiť</button>
-              <button id="cloudAutoBtn" class="cloudBtn requires-auth" type="button" title="Auto nahrávanie po zmenách">AutoSync: OFF</button>
+              <button id="cloudAutoBtn" class="cloudBtn requires-auth" type="button" title="Auto nahrávanie JSONu po zmenách">AutoSync: OFF</button>
+              <button id="cloudUploadPhotosBtn" class="cloudBtn requires-auth" type="button" title="Dohrať chýbajúce fotky do repozitára">Upload fotiek</button>
               <button id="cloudCheckBtn" class="cloudBtn requires-auth" type="button" title="Skontrolovať API limity">Limit</button>
               <button id="cloudSignOutBtn" class="cloudBtn requires-auth" type="button">Odhlásiť</button>
             </div>
-            <div class="smallNote">Backend: GitHub Gist (súkromný). Token so scope „gist“. Súbor: <code>bozp_export.json</code>.</div>
+            <div class="smallNote">JSON: GitHub Gist (súkromný). Súbor: <code>bozp_export.json</code>. Token: scope <b>gist</b>.<br>
+            Fotky: GitHub repo cez Contents API. Token: scope <b>public_repo</b> (public) alebo <b>repo</b> (private).</div>
           </div>
         </div>
       </div>
@@ -417,10 +400,9 @@
   </main>
 
   <footer class="app-footer" role="contentinfo">
-    <p>&copy; <span id="year"></span> BOZP Hodnotenie pracovísk. Dáta sa ukladajú iba lokálne v prehliadači.</p>
+    <p>&copy; <span id="year"></span> BOZP Hodnotenie pracovísk. Dáta sa ukladajú lokálne a voliteľne do Gistu (JSON) a do GitHub repozitára (fotky).</p>
   </footer>
 
-  <!-- Modál na zobrazenie fotiek -->
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content" role="document">
       <div class="modal-header">
@@ -431,29 +413,42 @@
     </div>
   </div>
 
-  <!-- Cloud Settings Modal (inline) -->
   <div id="cloudOverlay" class="cloudOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
     <div class="cloudModal">
       <div class="cloudHeader">
-        <strong id="cloudTitle">Cloud nastavenia (GitHub Gist)</strong>
+        <strong id="cloudTitle">Cloud nastavenia</strong>
         <button id="cloudClose" class="btn secondary" type="button">Zavrieť</button>
       </div>
       <div class="cloudBody">
         <div class="cloudGrid">
-          <div>
+          <div class="row">
             <label for="cloudGistId">Gist ID</label>
             <input id="cloudGistId" type="text" placeholder="napr. a1b2c3d4e5f6..." />
-            <div class="smallNote">ID nájdeš v URL gistu: https://gist.github.com/uzivatel/<b>ID</b></div>
           </div>
-          <div>
-            <label for="cloudToken">GitHub Token (scope: gist)</label>
-            <input id="cloudToken" type="password" placeholder="pat_... alebo ghp_..." />
-            <div class="smallNote">Token sa uloží do localStorage tohto prehliadača. Uchovávaj ho v tajnosti.</div>
+          <div class="row">
+            <label for="cloudToken">GitHub Token</label>
+            <input id="cloudToken" type="password" placeholder="ghp_… / pat_… (scopes: gist + public_repo/repo)" />
+          </div>
+          <div class="row">
+            <label for="cloudRepoOwner">Repo Owner</label>
+            <input id="cloudRepoOwner" type="text" placeholder="napr. sedivmiroslav-del" />
+          </div>
+          <div class="row">
+            <label for="cloudRepoName">Repo Name</label>
+            <input id="cloudRepoName" type="text" placeholder="napr. BOZP-photos" />
+          </div>
+          <div class="row">
+            <label for="cloudRepoBranch">Repo Branch</label>
+            <input id="cloudRepoBranch" type="text" placeholder="main" />
+          </div>
+          <div class="row">
+            <label for="cloudRepoFolder">Repo Folder (root)</label>
+            <input id="cloudRepoFolder" type="text" placeholder="bozp-photos" />
           </div>
         </div>
         <div class="cloudActions">
           <button id="cloudSaveCreds" class="btn primary" type="button">Uložiť nastavenia</button>
-          <button id="cloudCreateGist" class="btn secondary requires-auth" type="button" title="Vytvorí súkromný gist s prázdnym súborom">Vytvoriť nový Gist</button>
+          <button id="cloudCreateGist" class="btn secondary requires-auth" type="button" title="Vytvorí súkromný gist s prázdnym JSONom">Vytvoriť nový Gist</button>
         </div>
         <div id="cloudError" class="cloudError"></div>
         <div id="cloudNote" class="smallNote"></div>
@@ -470,9 +465,9 @@
       let useMemory = false;
       const mem = {
         workplaces: [],
-        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
+        assessments: new Map(),
         tasks: [],
-        photos: [], // {id, taskId, workplaceId, topicKey, name, blob, createdAt}
+        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -482,355 +477,203 @@
       }
 
       function openDb(){
-        return new Promise((resolve, reject) => {
-          if (!window.indexedDB) {
-            enableMemoryFallback('indexedDB not supported');
-            resolve(null);
-            return;
-          }
+        return new Promise((resolve) => {
+          if (!window.indexedDB) { enableMemoryFallback('no indexedDB'); resolve(null); return; }
           try {
             const req = indexedDB.open(DB_NAME, DB_VERSION);
-            req.onupgradeneeded = (e) => {
+            req.onupgradeneeded = () => {
               const db = req.result;
-              if (!db.objectStoreNames.contains('workplaces')) {
-                db.createObjectStore('workplaces', { keyPath: 'id', autoIncrement: true });
-              }
-              if (!db.objectStoreNames.contains('assessments')) {
-                db.createObjectStore('assessments', { keyPath: 'workplaceId' });
-              }
+              if (!db.objectStoreNames.contains('workplaces')) db.createObjectStore('workplaces', { keyPath: 'id', autoIncrement: true });
+              if (!db.objectStoreNames.contains('assessments')) db.createObjectStore('assessments', { keyPath: 'workplaceId' });
               if (!db.objectStoreNames.contains('tasks')) {
-                const store = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('status', 'status', { unique: false });
+                const s = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+                s.createIndex('status', 'status', { unique: false });
               }
               if (!db.objectStoreNames.contains('photos')) {
-                const store = db.createObjectStore('photos', { keyPath: 'id', autoIncrement: true });
-                store.createIndex('taskId', 'taskId', { unique: false });
+                const s = db.createObjectStore('photos', { keyPath: 'id', autoIncrement: true });
+                s.createIndex('taskId', 'taskId', { unique: false });
               }
             };
             req.onsuccess = () => resolve(req.result);
-            req.onerror   = () => {
-              enableMemoryFallback(req.error?.name || req.error || 'open error');
-              resolve(null);
-            };
-          } catch (err) {
-            enableMemoryFallback(err?.message || err);
-            resolve(null);
-          }
+            req.onerror   = () => { enableMemoryFallback(req.error?.name || 'open error'); resolve(null); };
+          } catch (err) { enableMemoryFallback(err?.message || err); resolve(null); }
         });
       }
-
-      function tx(db, stores, mode){
-        if(!db) return null;
-        return db.transaction(stores, mode);
-      }
-      function getAll(store){
-        return new Promise((resolve, reject) => {
-          if ('getAll' in store) {
-            const req = store.getAll();
-            req.onsuccess = () => resolve(req.result || []);
-            req.onerror = () => reject(req.error);
-          } else {
-            const out = [];
-            const req = store.openCursor();
-            req.onsuccess = (e) => {
-              const cursor = e.target.result;
-              if (cursor) { out.push(cursor.value); cursor.continue(); }
-              else resolve(out);
-            };
-            req.onerror = () => reject(req.error);
-          }
-        });
-      }
-      function getIndexAll(index, key){
-        return new Promise((resolve, reject) => {
-          const out = [];
-          const req = index.openCursor(key);
-          req.onsuccess = (e) => {
-            const cursor = e.target.result;
-            if (cursor) { out.push(cursor.value); cursor.continue(); }
-            else resolve(out);
-          };
-          req.onerror = () => reject(req.error);
-        });
-      }
-      function getByKey(store, key){
-        return new Promise((resolve, reject) => {
-          const req = store.get(key);
-          req.onsuccess = () => resolve(req.result || null);
-          req.onerror = () => reject(req.error);
-        });
-      }
-      function put(store, value){
-        return new Promise((resolve, reject) => {
-          const req = store.put(value);
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-      }
-      function add(store, value){
-        return new Promise((resolve, reject) => {
-          const req = store.add(value);
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-      }
-      function del(store, key){
-        return new Promise((resolve, reject) => {
-          const req = store.delete(key);
-          req.onsuccess = () => resolve();
-          req.onerror = () => reject(req.error);
-        });
-      }
-
-      async function memCountPhotosForTask(taskId){
-        return mem.photos.filter(p => p.taskId === taskId).length;
-      }
+      function tx(db, stores, mode){ if(!db) return null; return db.transaction(stores, mode); }
+      function getAll(store){ return new Promise((res,rej)=>{ const r=store.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); }); }
+      function getIndexAll(index, key){ return new Promise((res,rej)=>{ const out=[]; const r=index.openCursor(key); r.onsuccess=e=>{const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(out);}; r.onerror=()=>rej(r.error); }); }
+      function getByKey(store,key){ return new Promise((res,rej)=>{ const r=store.get(key); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
+      function put(store, value){ return new Promise((res,rej)=>{ const r=store.put(value); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+      function add(store, value){ return new Promise((res,rej)=>{ const r=store.add(value); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+      function del(store, key){ return new Promise((res,rej)=>{ const r=store.delete(key); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
 
       window.DB = {
         async addWorkplace(w){
           const db = await openDb();
-          const rec = {
-            segment: String(w.segment||'').trim(),
-            costCenter: String(w.costCenter||'').trim(),
-            equipment: String(w.equipment||'').trim(),
-            machineName: String(w.machineName||'').trim(),
-            createdAt: Date.now()
-          };
-          if (useMemory) {
-            const id = mem.ids.workplace++;
-            mem.workplaces.push({ id, ...rec });
-            return id;
-          }
-          const t = tx(db, ['workplaces'], 'readwrite');
-          const store = t.objectStore('workplaces');
-          const id = await add(store, rec);
-          return id;
+          const rec = { segment:String(w.segment||'').trim(), costCenter:String(w.costCenter||'').trim(), equipment:String(w.equipment||'').trim(), machineName:String(w.machineName||'').trim(), createdAt:Date.now() };
+          if (useMemory) { const id = mem.ids.workplace++; mem.workplaces.push({id,...rec}); return id; }
+          const t = tx(db, ['workplaces'], 'readwrite'); return await add(t.objectStore('workplaces'), rec);
         },
         async listWorkplaces(){
-          const db = await openDb();
-          if (useMemory) return [...mem.workplaces];
-          const t = tx(db, ['workplaces'], 'readonly');
-          const store = t.objectStore('workplaces');
-          return await getAll(store);
+          const db = await openDb(); if (useMemory) return [...mem.workplaces];
+          const t = tx(db, ['workplaces'], 'readonly'); return await getAll(t.objectStore('workplaces'));
         },
         async deleteWorkplace(id){
           const db = await openDb();
           if (useMemory) {
-            mem.workplaces = mem.workplaces.filter(w => w.id !== id);
+            mem.workplaces = mem.workplaces.filter(w=>w.id!==id);
             mem.assessments.delete(id);
-            const tasksToDelete = mem.tasks.filter(t => t.workplaceId === id).map(t => t.id);
-            mem.tasks = mem.tasks.filter(t => t.workplaceId !== id);
-            mem.photos = mem.photos.filter(p => !tasksToDelete.includes(p.taskId));
+            const tids = mem.tasks.filter(t=>t.workplaceId===id).map(t=>t.id);
+            mem.tasks = mem.tasks.filter(t=>t.workplaceId!==id);
+            mem.photos = mem.photos.filter(p=>!tids.includes(p.taskId));
             return;
           }
-          // Delete workplace
-          const t1 = tx(db, ['workplaces'], 'readwrite');
-          await del(t1.objectStore('workplaces'), id);
-          // Delete assessment
-          const t2 = tx(db, ['assessments'], 'readwrite');
-          await del(t2.objectStore('assessments'), id);
-          // Delete tasks and related photos
-          const t3 = tx(db, ['tasks','photos'], 'readwrite');
-          const tasksStore = t3.objectStore('tasks');
-          const photosStore = t3.objectStore('photos');
-          const tasks = await getAll(tasksStore);
-          const related = tasks.filter(x => x.workplaceId === id).map(x => x.id);
-          for (const tid of related) await del(tasksStore, tid);
-          // photos by taskId index
-          const idx = photosStore.index('taskId');
-          for (const tid of related) {
-            const phs = await getIndexAll(idx, tid);
-            for (const p of phs) await del(photosStore, p.id);
+          await del(tx(db,['workplaces'],'readwrite').objectStore('workplaces'), id);
+          await del(tx(db,['assessments'],'readwrite').objectStore('assessments'), id);
+          const t = tx(db,['tasks','photos'],'readwrite');
+          const tasks = await getAll(t.objectStore('tasks'));
+          const tids = tasks.filter(x=>x.workplaceId===id).map(x=>x.id);
+          for (const tid of tids) await del(t.objectStore('tasks'), tid);
+          const idx = t.objectStore('photos').index('taskId');
+          for (const tid of tids) {
+            const ph = await getIndexAll(idx, tid);
+            for (const p of ph) await del(t.objectStore('photos'), p.id);
           }
         },
 
         async getAssessment(workplaceId){
           const db = await openDb();
-          if (useMemory) return mem.assessments.get(workplaceId) || null;
-          const t = tx(db, ['assessments'], 'readonly');
-          return await getByKey(t.objectStore('assessments'), workplaceId);
+          if (useMemory) return mem.assessments.get(workplaceId)||null;
+          return await getByKey(tx(db,['assessments'],'readonly').objectStore('assessments'), workplaceId);
         },
         async saveAssessment(workplaceId, statuses){
           const db = await openDb();
-          const rec = { workplaceId, statuses: statuses||{}, savedAt: Date.now() };
+          const rec = { workplaceId, statuses:statuses||{}, savedAt:Date.now() };
           if (useMemory) { mem.assessments.set(workplaceId, rec); return; }
-          const t = tx(db, ['assessments'], 'readwrite');
-          await put(t.objectStore('assessments'), rec);
+          await put(tx(db,['assessments'],'readwrite').objectStore('assessments'), rec);
         },
 
         async listTasks(filter={}){
           const db = await openDb();
-          const status = filter.status || '';
-          if (useMemory) {
-            const arr = [...mem.tasks];
-            return status ? arr.filter(t => t.status === status) : arr;
-          }
-          const t = tx(db, ['tasks'], 'readonly');
-          const store = t.objectStore('tasks');
-          if (status) {
-            const idx = store.index('status');
-            return await getIndexAll(idx, status);
-          } else {
-            return await getAll(store);
-          }
+          const st = filter.status||'';
+          if (useMemory) { const a=[...mem.tasks]; return st ? a.filter(t=>t.status===st) : a; }
+          const s = tx(db,['tasks'],'readonly').objectStore('tasks');
+          return st ? await getIndexAll(s.index('status'), st) : await getAll(s);
         },
         async addTask(task){
           const db = await openDb();
-          const rec = {
-            workplaceId: task.workplaceId,
-            topicKey: task.topicKey,
-            responsible: task.responsible || '',
-            dueDate: task.dueDate || null,
-            status: task.status || 'Otvorená',
-            createdAt: Date.now()
-          };
-          if (useMemory) {
-            const id = mem.ids.task++;
-            mem.tasks.push({ id, ...rec });
-            return id;
-          }
-          const t = tx(db, ['tasks'], 'readwrite');
-          const store = t.objectStore('tasks');
-          const id = await add(store, rec);
-          return id;
+          const rec = { workplaceId:task.workplaceId, topicKey:task.topicKey, responsible:task.responsible||'', dueDate:task.dueDate||null, status:task.status||'Otvorená', createdAt:Date.now() };
+          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id,...rec}); return id; }
+          return await add(tx(db,['tasks'],'readwrite').objectStore('tasks'), rec);
         },
         async updateTask(task){
           const db = await openDb();
-          if (useMemory) {
-            const i = mem.tasks.findIndex(x => x.id === task.id);
-            if (i >= 0) mem.tasks[i] = { ...mem.tasks[i], ...task };
-            return;
-          }
-          const t = tx(db, ['tasks'], 'readwrite');
-          await put(t.objectStore('tasks'), task);
+          if (useMemory) { const i=mem.tasks.findIndex(x=>x.id===task.id); if(i>=0) mem.tasks[i]={...mem.tasks[i],...task}; return; }
+          await put(tx(db,['tasks'],'readwrite').objectStore('tasks'), task);
         },
-        async deleteTask(taskId){
+        async deleteTask(id){
           const db = await openDb();
-          if (useMemory) {
-            mem.tasks = mem.tasks.filter(t => t.id !== taskId);
-            mem.photos = mem.photos.filter(p => p.taskId !== taskId);
-            return;
-          }
-          const t = tx(db, ['tasks','photos'], 'readwrite');
-          await del(t.objectStore('tasks'), taskId);
-          // delete photos for task
-          const photosStore = t.objectStore('photos');
-          const idx = photosStore.index('taskId');
-          const phs = await getIndexAll(idx, taskId);
-          for (const p of phs) await del(photosStore, p.id);
+          if (useMemory) { mem.tasks=mem.tasks.filter(t=>t.id!==id); mem.photos=mem.photos.filter(p=>p.taskId!==id); return; }
+          await del(tx(db,['tasks'],'readwrite').objectStore('tasks'), id);
+          const t = tx(db,['photos'],'readwrite'); const idx=t.objectStore('photos').index('taskId'); const ph=await getIndexAll(idx,id);
+          for(const p of ph) await del(t.objectStore('photos'), p.id);
         },
 
-        async listPhotosByTask(taskId){
+        async addPhoto(taskId, workplaceId, topicKey, file){
           const db = await openDb();
-          if (useMemory) return mem.photos.filter(p => p.taskId === taskId).sort((a,b)=>a.createdAt-b.createdAt);
-          const t = tx(db, ['photos'], 'readonly');
-          const idx = t.objectStore('photos').index('taskId');
+          let type = file?.type || 'application/octet-stream';
+          let size = file?.size || 0;
+          const name = file?.name || 'photo';
+          let blob;
+          try { const buf = await file.arrayBuffer(); blob = new Blob([buf], { type }); }
+          catch { blob = file || new Blob([], { type }); }
+          const rec = { taskId, workplaceId:workplaceId||null, topicKey:topicKey||null, name, type, size, blob, createdAt:Date.now(), remoteUrl:null, remoteSha:null, uploadedAt:null };
+          if (useMemory) { const id = mem.ids.photo++; mem.photos.push({id,...rec}); return id; }
+          return await add(tx(db,['photos'],'readwrite').objectStore('photos'), rec);
+        },
+        async listPhotosByTask(taskId){
+          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).sort((a,b)=>a.createdAt-b.createdAt);
+          const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId');
           const arr = await getIndexAll(idx, taskId);
           return arr.sort((a,b)=>a.createdAt-b.createdAt);
         },
         async countPhotosForTask(taskId){
-          const db = await openDb();
-          if (useMemory) return memCountPhotosForTask(taskId);
-          const t = tx(db, ['photos'], 'readonly');
-          const idx = t.objectStore('photos').index('taskId');
-          const arr = await getIndexAll(idx, taskId);
-          return arr.length;
+          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).length;
+          const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId'); const arr=await getIndexAll(idx, taskId); return arr.length;
         },
-        async addPhoto(taskId, workplaceId, topicKey, file){
+        async updatePhoto(photo){
           const db = await openDb();
-          const name = file?.name || 'photo';
-          let blob;
-          try {
-            const buf = await file.arrayBuffer();
-            blob = new Blob([buf], { type: file.type || 'application/octet-stream' });
-          } catch {
-            blob = file || new Blob([], { type: 'application/octet-stream' });
-          }
-          const rec = {
-            taskId, workplaceId: workplaceId||null, topicKey: topicKey||null,
-            name, blob, createdAt: Date.now()
-          };
-          if (useMemory) {
-            const id = mem.ids.photo++;
-            mem.photos.push({ id, ...rec });
-            return id;
-          }
-          const t = tx(db, ['photos'], 'readwrite');
-          const store = t.objectStore('photos');
-          const id = await add(store, rec);
-          return id;
+          if (useMemory) { const i=mem.photos.findIndex(x=>x.id===photo.id); if(i>=0) mem.photos[i]={...mem.photos[i],...photo}; return; }
+          await put(tx(db,['photos'],'readwrite').objectStore('photos'), photo);
+        },
+        async getPhoto(id){
+          const db = await openDb();
+          if (useMemory) return mem.photos.find(p=>p.id===id)||null;
+          return await getByKey(tx(db,['photos'],'readonly').objectStore('photos'), id);
+        },
+        async listAllPhotos(){
+          const db = await openDb();
+          if (useMemory) return [...mem.photos];
+          return await getAll(tx(db,['photos'],'readonly').objectStore('photos'));
         },
 
         async exportJSON(){
-          // Note: Photos (binary) are NOT exported to keep JSON small and text-only.
           const workplaces = await this.listWorkplaces();
           const tasks = await this.listTasks();
-          // assessments: collect per workplace
-          const outAssess = [];
-          for (const w of workplaces) {
-            const a = await this.getAssessment(w.id);
-            if (a) outAssess.push(a);
-          }
-          // Provide photos count per task (metadata only)
-          const photosMeta = [];
-          for (const t of tasks) {
-            const c = await this.countPhotosForTask(t.id);
-            photosMeta.push({ taskId: t.id, count: c });
-          }
-          return {
-            version: 1,
-            workplaces,
-            assessments: outAssess,
-            tasks,
-            photosMeta
-          };
+          const assessments = [];
+          for (const w of workplaces) { const a = await this.getAssessment(w.id); if (a) assessments.push(a); }
+          const photos = await this.listAllPhotos();
+          const photosLight = photos.map(p => ({
+            id: p.id, taskId: p.taskId, workplaceId: p.workplaceId, topicKey: p.topicKey,
+            name: p.name, type: p.type, size: p.size, createdAt: p.createdAt,
+            remoteUrl: p.remoteUrl || null
+          }));
+          return { version: 2, workplaces, tasks, assessments, photos: photosLight };
         },
 
         async importJSON(data){
-          // Clear current stores and import (photos not included)
           const db = await openDb();
           const srcW = data.workplaces || [];
           const srcA = data.assessments || [];
           const srcT = data.tasks || [];
+          const srcP = data.photos || [];
 
           if (useMemory) {
-            mem.workplaces = srcW.map(w => ({...w}));
-            mem.assessments = new Map();
-            for (const a of srcA) mem.assessments.set(a.workplaceId, {...a});
-            mem.tasks = srcT.map(t => ({...t}));
-            mem.photos = []; // not imported
-            // reset counters
-            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id)) || 0) + 1;
-            mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id)) || 0) + 1;
-            mem.ids.photo = 1;
+            mem.workplaces = srcW.map(w=>({...w}));
+            mem.assessments = new Map(); for (const a of srcA) mem.assessments.set(a.workplaceId, {...a});
+            mem.tasks = srcT.map(t=>({...t}));
+            mem.photos = srcP.map(p=>({ id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null }));
+            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id))||0)+1;
+            mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id))||0)+1;
+            mem.ids.photo = (Math.max(0, ...mem.photos.map(p=>p.id))||0)+1;
             return;
           }
 
-          // Delete all
+          // wipe
           {
-            const t = tx(db, ['workplaces','assessments','tasks','photos'], 'readwrite');
-            for (const storeName of ['workplaces','assessments','tasks','photos']) {
-              const st = t.objectStore(storeName);
-              const items = await getAll(st);
+            const t = tx(db,['workplaces','assessments','tasks','photos'],'readwrite');
+            for (const s of ['workplaces','assessments','tasks','photos']) {
+              const st = t.objectStore(s); const items = await getAll(st);
               for (const it of items) await del(st, it[st.keyPath]);
             }
           }
-          // Import
+          // import
           {
-            const t = tx(db, ['workplaces','assessments','tasks'], 'readwrite');
-            const wStore = t.objectStore('workplaces');
-            const aStore = t.objectStore('assessments');
-            const tStore = t.objectStore('tasks');
-            for (const w of srcW) await put(wStore, w);
-            for (const a of srcA) await put(aStore, a);
-            for (const tt of srcT) await put(tStore, tt);
+            const t = tx(db,['workplaces','assessments','tasks','photos'],'readwrite');
+            const wS=t.objectStore('workplaces'), aS=t.objectStore('assessments'), tS=t.objectStore('tasks'), pS=t.objectStore('photos');
+            for (const w of srcW) await put(wS, w);
+            for (const a of srcA) await put(aS, a);
+            for (const ta of srcT) await put(tS, ta);
+            for (const p of srcP) {
+              await put(pS, { id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null });
+            }
           }
         }
       };
     })();
   </script>
 
-  <!-- Charts helper (no global TOPICS leakage) -->
+  <!-- Charts helper -->
   <script>
     (function(){
       const CHART_TOPICS = [
@@ -849,55 +692,14 @@
         {key:'revizia_pracoviska_ce', name:'revízia pracoviska (CE)'},
         {key:'prebierka_stroja', name:'prebierka stroja'}
       ];
-
       let chartPie=null, chartBar=null;
-
-      function renderPie(ioCount, nioCount) {
-        const ctx = document.getElementById('chart-io-nio').getContext('2d');
-        if (chartPie) chartPie.destroy();
-        chartPie = new Chart(ctx, {
-          type: 'pie',
-          data: {
-            labels: ['IO', 'NIO'],
-            datasets: [{
-              data: [ioCount, nioCount],
-              backgroundColor: ['rgb(161,200,97)', 'rgb(255,255,96)'],
-              borderColor: ['rgb(0,0,0)', 'rgb(0,0,0)'],
-              borderWidth: 1
-            }]
-          },
-          options: { plugins: { legend: { position: 'bottom' } } }
-        });
-      }
-
-      function renderBar(topicNioCounts) {
-        const ctx = document.getElementById('chart-topics-nio').getContext('2d');
-        if (chartBar) chartBar.destroy();
-        chartBar = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: CHART_TOPICS.map(t => t.name),
-            datasets: [{
-              label: 'Počet NIO',
-              data: CHART_TOPICS.map(t => topicNioCounts[t.key] || 0),
-              backgroundColor: 'rgb(29,155,178)',
-              borderColor: 'rgb(0,0,0)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            indexAxis: 'x',
-            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-            plugins: { legend: { position: 'bottom' } }
-          }
-        });
-      }
-
+      function renderPie(ioCount, nioCount){ const ctx=document.getElementById('chart-io-nio').getContext('2d'); if(chartPie) chartPie.destroy(); chartPie=new Chart(ctx,{type:'pie',data:{labels:['IO','NIO'],datasets:[{data:[ioCount,nioCount],backgroundColor:['rgb(161,200,97)','rgb(255,255,96)'],borderColor:['rgb(0,0,0)','rgb(0,0,0)'],borderWidth:1}]},options:{plugins:{legend:{position:'bottom'}}}}); }
+      function renderBar(topicNioCounts){ const ctx=document.getElementById('chart-topics-nio').getContext('2d'); if(chartBar) chartBar.destroy(); chartBar=new Chart(ctx,{type:'bar',data:{labels:CHART_TOPICS.map(t=>t.name),datasets:[{label:'Počet NIO',data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),backgroundColor:'rgb(29,155,178)',borderColor:'rgb(0,0,0)',borderWidth:1}]},options:{indexAxis:'x',scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{position:'bottom'}}}}); }
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
 
-  <!-- Main logic with local alias TOPICS_LIST to avoid global collision -->
+  <!-- Main logic -->
   <script>
     (function(){
       const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
@@ -911,7 +713,7 @@
       const LS_SYNC_CREDS_KEY = 'bozpApp/cloudCreds';
       const GIST_FILE_NAME = 'bozp_export.json';
 
-      let syncCreds = null;   // { gistId, token, auto }
+      let syncCreds = null;   // { gistId, token, auto, repoOwner, repoName, repoBranch, repoFolder }
       let rateLimit = { remaining:null, reset:null };
       let syncTimer = null, syncBusy=false, syncBackoffMs=8000;
 
@@ -950,10 +752,7 @@
 
       function initRouting(){
         const links = document.querySelectorAll('.nav-link');
-        links.forEach(a => a.addEventListener('click', (e) => {
-          e.preventDefault();
-          navigate(a.getAttribute('data-route'));
-        }));
+        links.forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); navigate(a.getAttribute('data-route')); }));
         navigate('dashboard');
       }
       function navigate(route) {
@@ -1061,7 +860,6 @@
           updateDashboard();
         });
 
-        // Live filters in the header filter row
         ['f-segment','f-costcenter','f-equipment','f-machine'].forEach(id => {
           document.getElementById(id).addEventListener('input', loadWorkplacesTable);
         });
@@ -1304,7 +1102,7 @@
         const fileInp = createEl('input', { id: `file-${topic.key}`, type: 'file', accept: 'image/*', multiple: 'multiple' });
         const photosWrap = createEl('div', { class: 'photo-list', id: `photos-${topic.key}` });
 
-      [respLbl, respInp, dueLbl, dueInp, fileLbl, fileInp, photosWrap].forEach(el => nioDetail.appendChild(el));
+       [respLbl, respInp, dueLbl, dueInp, fileLbl, fileInp, photosWrap].forEach(el => nioDetail.appendChild(el));
         body.appendChild(nioDetail);
 
         const updateBadge = () => {
@@ -1349,9 +1147,13 @@
         const photos = await DB.listPhotosByTask(t.id);
         photosWrap.innerHTML = '';
         for (const p of photos) {
-          const url  = URL.createObjectURL(p.blob);
+          let src = '';
+          if (p.remoteUrl) src = p.remoteUrl;
+          else if (p.blob) src = URL.createObjectURL(p.blob);
+          else src = '';
+          if (!src) continue;
           const item = createEl('div', { class: 'photo-item' });
-          const img  = createEl('img', { src: url, alt: `Fotka k téme (${topicKey})` });
+          const img  = createEl('img', { src: src, alt: `Fotka k téme (${topicKey})` });
           const name = createEl('span'); name.textContent = p.name;
           item.appendChild(img); item.appendChild(name);
           photosWrap.appendChild(item);
@@ -1396,7 +1198,11 @@
 
           const already = await DB.countPhotosForTask(taskId);
           const canAdd  = Math.max(0, 5 - already);
-          for (const file of info.files.slice(0, canAdd)) await DB.addPhoto(taskId, workplaceId, topicKey, file);
+          for (const file of info.files.slice(0, canAdd)) {
+            const pid = await DB.addPhoto(taskId, workplaceId, topicKey, file);
+            // pokus o upload
+            await tryUploadPhoto(pid);
+          }
         }
 
         alert('Hodnotenie uložené.');
@@ -1481,8 +1287,9 @@
             const modalBody = document.getElementById('modal-body');
             modalBody.innerHTML = '';
             for (const p of photos) {
-              const url = URL.createObjectURL(p.blob);
-              const img = createEl('img', { src: url, alt: `Fotka úlohy ${p.name}` });
+              const src = p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
+              if (!src) continue;
+              const img = createEl('img', { src: src, alt: `Fotka úlohy ${p.name}` });
               modalBody.appendChild(img);
             }
             openModal();
@@ -1494,7 +1301,10 @@
             const id = Number(input.getAttribute('data-id'));
             const already = await DB.countPhotosForTask(id);
             const files = Array.from(input.files || []);
-            for (const f of files.slice(0, Math.max(0, 5 - already))) await DB.addPhoto(id, null, null, f);
+            for (const f of files.slice(0, Math.max(0, 5 - already))) {
+              const pid = await DB.addPhoto(id, null, null, f);
+              await tryUploadPhoto(pid);
+            }
             input.value = '';
             loadTasksTable();
           });
@@ -1565,10 +1375,11 @@
         });
       }
 
-      /* Cloud (Gist) */
+      // Cloud helpers
+      function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_') ? 'Bearer ' : 'token ') + t; }
       function githubHeaders(hasJson=false){
         const h = {
-          'Authorization': 'token '+(syncCreds?.token||''),
+          'Authorization': authHeader(syncCreds?.token||''),
           'Accept': 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28'
         };
@@ -1577,7 +1388,7 @@
       }
       function githubHeadersWithToken(token, hasJson=false){
         const h = {
-          'Authorization': 'token '+(token||''),
+          'Authorization': authHeader(token||''),
           'Accept': 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28'
         };
@@ -1594,11 +1405,20 @@
       function loadSyncCreds(){
         try { syncCreds = JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); } catch { syncCreds = null; }
         const idTxt = syncCreds?.gistId ? (syncCreds.gistId.slice(0,8)+'…') : '—';
-        setCloudState(syncCreds?.gistId ? `Pripojené (Gist ${idTxt})${syncCreds.auto?' • Auto':''}` : 'Odpojené');
+        const repoTxt = (syncCreds?.repoOwner && syncCreds?.repoName) ? `${syncCreds.repoOwner}/${syncCreds.repoName}` : '—';
+        setCloudState((syncCreds?.gistId ? `Gist ${idTxt}` : 'Gist: —') + ' • ' + (repoTxt!=='—' ? repoTxt : 'Repo: —') + (syncCreds?.auto?' • Auto':''));
         document.getElementById('cloudAutoBtn').textContent = 'AutoSync: ' + (syncCreds?.auto ? 'ON' : 'OFF');
       }
       function saveSyncCreds(creds){
-        syncCreds = { gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), auto:!!creds.auto };
+        syncCreds = {
+          gistId:(creds.gistId||'').trim(),
+          token:(creds.token||'').trim(),
+          auto:!!creds.auto,
+          repoOwner:(creds.repoOwner||'').trim(),
+          repoName:(creds.repoName||'').trim(),
+          repoBranch:(creds.repoBranch||'main').trim(),
+          repoFolder:(creds.repoFolder||'bozp-photos').trim()
+        };
         localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(syncCreds));
         loadSyncCreds();
       }
@@ -1610,6 +1430,7 @@
         if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
         updateLockStateUI();
       }
+
       async function cloudCheckRate(){
         if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
         try{
@@ -1677,12 +1498,82 @@
         }, syncBackoffMs);
       }
 
+      // GitHub repo (photos)
+      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
+      function buildPhotoPath(photo, fileName){
+        const root = (syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
+        const wp = photo.workplaceId ? `workplace-${photo.workplaceId}` : 'workplace-unknown';
+        const tk = photo.taskId ? `task-${photo.taskId}` : 'task-unknown';
+        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
+      }
+      async function getFileSha(owner, repo, path, branch){
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+        const res = await fetch(url, { headers: githubHeaders(false) });
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error('Get content: HTTP '+res.status);
+        const j = await res.json();
+        return j.sha || null;
+      }
+      function bufToBase64(buf){
+        let binary = ''; const bytes = new Uint8Array(buf);
+        const len = bytes.byteLength;
+        for (let i=0;i<len;i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary);
+      }
+      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
+        const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}`;
+        const body = { message: message||`Add ${path}`, content: base64Content, branch: branch||'main' };
+        if (sha) body.sha = sha;
+        const res = await fetch(url, { method:'PUT', headers: githubHeaders(true), body: JSON.stringify(body) });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(`Upload zlyhal: ${res.status} ${txt}`);
+        }
+        return res.json();
+      }
+
+      async function tryUploadPhoto(photoId){
+        try {
+          if (!document.body.classList.contains('authed')) return; // zamknuté UI
+          if (!syncCreds?.token || !syncCreds?.repoOwner || !syncCreds?.repoName) return;
+          const p = await DB.getPhoto(photoId);
+          if (!p || p.remoteUrl) return; // už je nahrané
+          if (!p.blob) return; // nemáme dáta
+          const path = buildPhotoPath(p, p.name);
+          const buf = await p.blob.arrayBuffer();
+          const base64 = bufToBase64(buf);
+          const sha = await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
+          const res = await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
+          const remoteUrl = `https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
+          p.remoteUrl = remoteUrl; p.remoteSha = res.content.sha || null; p.uploadedAt = Date.now();
+          await DB.updatePhoto(p);
+        } catch (err) {
+          console.warn('Upload fotky zlyhal:', err?.message||err);
+        }
+      }
+
+      async function uploadPendingPhotos(){
+        if (!syncCreds?.token || !syncCreds?.repoOwner || !syncCreds?.repoName) { alert('Nastav GitHub repo a token.'); return; }
+        const all = await DB.listAllPhotos();
+        const pending = all.filter(p => !p.remoteUrl && p.blob);
+        if (pending.length === 0) { alert('Žiadne fotky na dohratie.'); return; }
+        let ok=0, fail=0;
+        for (const p of pending) {
+          try { await tryUploadPhoto(p.id); ok++; } catch { fail++; }
+        }
+        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
+      }
+
       function bindCloudUI(){
         const cloudBtn  = document.getElementById('cloudBtn');
         const cloudOverlay = document.getElementById('cloudOverlay');
         const cloudClose   = document.getElementById('cloudClose');
         const cloudGistIdInput = document.getElementById('cloudGistId');
         const cloudTokenInput  = document.getElementById('cloudToken');
+        const cloudRepoOwner   = document.getElementById('cloudRepoOwner');
+        const cloudRepoName    = document.getElementById('cloudRepoName');
+        const cloudRepoBranch  = document.getElementById('cloudRepoBranch');
+        const cloudRepoFolder  = document.getElementById('cloudRepoFolder');
         const cloudSaveCreds   = document.getElementById('cloudSaveCreds');
         const cloudCreateGist  = document.getElementById('cloudCreateGist');
         const cloudErrorEl     = document.getElementById('cloudError');
@@ -1699,15 +1590,27 @@
           const c = syncCreds || {};
           cloudGistIdInput.value = c.gistId || '';
           cloudTokenInput.value  = c.token || '';
+          cloudRepoOwner.value   = c.repoOwner || '';
+          cloudRepoName.value    = c.repoName || '';
+          cloudRepoBranch.value  = c.repoBranch || 'main';
+          cloudRepoFolder.value  = c.repoFolder || 'bozp-photos';
           cloudOverlay.setAttribute('aria-hidden','false');
         });
         cloudClose.addEventListener('click', () => cloudOverlay.setAttribute('aria-hidden','true'));
         cloudOverlay.addEventListener('click', (e) => { if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
 
         cloudSaveCreds.addEventListener('click', () => {
-          const id = cloudGistIdInput.value.trim(), tk = cloudTokenInput.value.trim();
-          if(!tk){ showCloudError('Vyžaduje sa token (scope: gist).'); return; }
-          saveSyncCreds({ gistId:id, token:tk, auto: syncCreds?.auto||false });
+          const creds = {
+            gistId: cloudGistIdInput.value.trim(),
+            token:  cloudTokenInput.value.trim(),
+            repoOwner: cloudRepoOwner.value.trim(),
+            repoName: cloudRepoName.value.trim(),
+            repoBranch: cloudRepoBranch.value.trim() || 'main',
+            repoFolder: cloudRepoFolder.value.trim() || 'bozp-photos',
+            auto: syncCreds?.auto||false
+          };
+          if (!creds.token) { showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
+          saveSyncCreds(creds);
           alert('Cloud: nastavenia uložené.');
           cloudOverlay.setAttribute('aria-hidden','true');
         });
@@ -1716,7 +1619,7 @@
           const tk = cloudTokenInput.value.trim() || syncCreds?.token || '';
           if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
           try{
-            const payloadStr = JSON.stringify({version:1, note:'Inicializácia BOZP App'}, null, 2);
+            const payloadStr = JSON.stringify({version:2, note:'Inicializácia BOZP App'}, null, 2);
             const res = await fetch('https://api.github.com/gists', {
               method:'POST', headers: githubHeadersWithToken(tk,true),
               body: JSON.stringify({ description:'BOZP Workspace', public:false, files:{[GIST_FILE_NAME]: { content: payloadStr } } })
@@ -1730,13 +1633,14 @@
         });
 
         document.getElementById('cloudLoadBtn').addEventListener('click', cloudLoad);
-        document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
+        document.getElementById('cloudSaveBtn').addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
         document.getElementById('cloudAutoBtn').addEventListener('click', () => {
           const c = syncCreds || { gistId:'', token:'', auto:false };
           c.auto = !c.auto; saveSyncCreds(c);
         });
         document.getElementById('cloudSignOutBtn').addEventListener('click', () => { if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
         document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
+        document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
 
         document.getElementById('unlockBtn').addEventListener('click', unlockWithPassword);
         document.getElementById('unlockPass').addEventListener('keydown', (e) => { if(e.key==='Enter'){ e.preventDefault(); unlockWithPassword(); }});
@@ -1772,4 +1676,3 @@
   </script>
 </body>
 </html>
-
