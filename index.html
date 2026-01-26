@@ -1,9 +1,3 @@
-[CAST 1/1 ZACIATOK]
-Strom súborov:
-- index.html
-
-=== index.html ZACIATOK ===
-```html
 <!DOCTYPE html>
 <html lang="sk">
 <head>
@@ -27,60 +21,65 @@ Strom súborov:
       --yellow: rgb(255,255,96);
 
       --radius: 10px;
-      --shadow: 0 6px 16px rgba(0,0,0,0.12);
+      --shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
 
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--black);
       background: var(--white);
       line-height: 1.5;
     }
 
-    .skip-link { position: absolute; left: -9999px; top: -9999px; }
-    .skip-link:focus {
-      left: 8px; top: 8px; background: var(--yellow); color: var(--black);
-      padding: 8px 12px; border-radius: 6px; z-index: 999;
-    }
-
     .app-header {
-      background: var(--blue); color: var(--white);
-      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      color: #fff;
+      padding: 14px clamp(16px, 4vw, 32px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
     .brand { display: flex; align-items: center; gap: 12px; }
-    .app-nav ul { list-style: none; display: flex; gap: 8px; margin: 0; padding: 0; }
-    .app-nav a { color: var(--white); text-decoration: none; padding: 8px 12px; border-radius: 6px; }
-    .app-nav a:hover, .app-nav a[aria-current="page"] { background: var(--green); color: var(--white); }
+    .brand h1 { margin: 0; font-size: clamp(18px, 2.2vw, 26px); }
 
-    .app-main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+    .app-nav ul { list-style: none; display: flex; gap: 8px; margin: 0; padding: 0; flex-wrap: wrap; }
+    .app-nav a { color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; }
+    .app-nav a:hover, .app-nav a[aria-current="page"] { background: rgba(255,255,255,0.2); }
 
-    .view { margin-bottom: 24px; }
+    .app-main { padding: 16px clamp(16px,4vw,32px); }
+
+    .btn { appearance: none; border: 1px solid transparent; border-radius: 10px; padding: 8px 12px; font-weight: 600; cursor: pointer; transition: transform .04s, background-color .2s, border-color .2s, color .2s, box-shadow .2s; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--yellow); color: #000; border-color: rgba(0,0,0,.12); }
+    .btn.primary:hover { background: rgb(245,245,120); }
+    .btn.secondary { background: #fff; color: #000; border-color: var(--light-gray); }
+    .btn.secondary:hover { background: rgb(246,251,253); }
+    .btn.danger { background: #fff; color: #8b0000; border-color: #caa; }
+    .btn.danger:hover { background: #ffecec; }
+    .btn.icon-btn { background: transparent; color: var(--black); font-size: 1.2rem; border: none; }
 
     .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
     .card { background: var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
-    .stat-number { font-size: 1.8rem; font-weight: bold; color: var(--black); }
+    .stat-number { font-size: 1.8rem; font-weight: 700; }
 
     .filters, .selector-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
     .filter-group { display: flex; flex-direction: column; min-width: 180px; }
 
-    .btn { border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
-    .btn.primary { background: var(--green); color: var(--white); }
-    .btn.secondary { background: var(--light-gray); color: var(--black); }
-    .btn.danger { background: #b00020; color: var(--white); }
-    .btn.icon-btn { background: transparent; color: var(--black); font-size: 1.2rem; }
-    .btn:focus { outline: 3px solid var(--yellow); }
-
     .form { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
     fieldset { border: none; padding: 0; }
     legend { font-weight: 700; margin-bottom: 8px; }
-    .form-row { display: grid; grid-template-columns: 200px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .form-actions { display: flex; gap: 8px; margin-top: 8px; }
 
-    input[type="text"], input[type="password"], input[type="date"], input[type="search"], input[type="number"], select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--gray); }
-    input[type="file"] { padding: 6px; border: 1px dashed var(--gray); border-radius: 6px; }
+    .form-row { display: grid; grid-template-columns: 200px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .form-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+    input[type="text"], input[type="password"], input[type="date"], input[type="search"], input[type="number"], select {
+      width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--light-gray);
+    }
+    input[type="file"] { padding: 6px; border: 1px dashed var(--light-gray); border-radius: 8px; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .panel { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
@@ -91,43 +90,73 @@ Strom súborov:
     .table thead th { background: var(--light-gray); }
     .table tr:hover td { background: rgba(206,213,218,0.5); }
 
-    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
     .chart-section { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
-    .chart-desc { font-size: 0.9rem; color: var(--gray); }
 
     /* Témy pod sebou (1 stĺpec) */
     .assessment-form .topics-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
     .topic-card { border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; background: var(--white); }
     .topic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
-    .badge.io { background: var(--lime); color: var(--black); }
-    .badge.nio { background: var(--yellow); color: var(--black); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--light-gray); }
+    .badge.io { background: rgba(161,200,97,.25); color: var(--black); }
+    .badge.nio { background: rgba(255,255,96,.25); color: var(--black); }
 
     .topic-body { display: grid; grid-template-columns: 200px 1fr; gap: 8px; align-items: start; }
     .photo-list { display: flex; flex-wrap: wrap; gap: 8px; }
     .photo-item { border: 1px solid var(--light-gray); border-radius: 8px; padding: 4px; display: flex; align-items: center; gap: 6px; }
     .photo-item img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; border: 1px solid var(--light-gray); }
 
-    .note { color: var(--gray); }
-    .app-footer { background: var(--light-gray); color: var(--black); padding: 12px 16px; text-align: center; }
+    .app-footer { padding: 14px clamp(16px,4vw,32px); border-top: 1px solid var(--light-gray); color: var(--gray); background: rgba(206,213,218,.15); text-align: center; }
 
+    /* Modal */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
     .modal[aria-hidden="false"] { display: flex; }
-    .modal-content { background: var(--white); border-radius: var(--radius); padding: 12px; max-width: 800px; width: 95%; position: relative; }
+    .modal-content { background: var(--white); border-radius: var(--radius); padding: 12px; max-width: 900px; width: 96%; position: relative; box-shadow: var(--shadow); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .modal-body { display: flex; flex-wrap: wrap; gap: 10px; }
     .modal-body img { width: 200px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid var(--light-gray); }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
-    .table-tools { display: flex; gap: 8px; align-items: center; padding: 8px; }
-
-    /* Akcie vedľa seba */
-    .action-group { display: flex; gap: 8px; align-items: center; }
-
-    /* Header filters + sorting */
-    .filter-input { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--gray); background: var(--white); }
+    /* Table filters + sorting */
+    .filter-input { width: 100%; padding: 6px; border-radius: 8px; border: 1px solid var(--light-gray); background: var(--white); }
     .table th.sortable { cursor: pointer; user-select: none; }
     .sort-indicator { margin-left: 6px; color: var(--gray); font-size: 0.85em; }
+
+    .action-group { display: flex; gap: 8px; align-items: center; }
+
+    /* Cloud (Gist) styles */
+    .cloudWrap{position:relative}
+    #cloudBtn{position:relative}
+    #cloudPopup{position:relative;background:#fff;border:1px solid var(--light-gray);border-radius:10px;padding:10px;box-shadow:var(--shadow);min-width:320px;display:grid;gap:8px;color:#000;margin-top:10px}
+    #cloudPopup[hidden]{display:none}
+    .cloudRow{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .cloudRow .lbl{font-weight:600;color:#1f2937}
+    .cloudRow .val{color:#4b5563}
+    .cloudActions{display:flex;gap:6px;flex-wrap:wrap}
+    .cloudBtn{padding:6px 10px;border:1px solid var(--light-gray);border-radius:8px;background:#fff;cursor:pointer}
+    .cloudBtn:hover{background:#f3f4f6}
+    .smallNote{color:#555;font-size:12px}
+    .cloudError{color:#b00020;background:#fdecee;border:1px solid #f5c2c7;border-radius:8px;padding:8px 10px;display:none}
+    .cloudError.show{display:block}
+    .requires-auth{ display:none !important; }
+    body.authed .requires-auth{ display:inline-flex !important; }
+
+    .cloudOverlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:1000}
+    .cloudOverlay[aria-hidden="false"]{display:flex}
+    .cloudModal{width:min(600px,92vw);background:#fff;border:2px solid var(--light-gray);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;color:#000}
+    .cloudHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-bottom:2px solid var(--light-gray)}
+    .cloudBody{padding:12px;display:grid;gap:12px}
+    .cloudGrid{display:grid;gap:10px}
+    .cloudGrid label{font-weight:600;color:#1f2937}
+    .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
+    .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
+
+    @media (max-width: 980px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
+      .chart-section { margin-top: 12px; }
+      .form-row { grid-template-columns: 1fr; }
+      .topic-body { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -148,6 +177,7 @@ Strom súborov:
   </header>
 
   <main id="main" class="app-main" role="main">
+    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view" aria-labelledby="dashboard-title">
       <h2 id="dashboard-title">Prehľad a vizualizácie</h2>
       <div class="filters">
@@ -173,12 +203,20 @@ Strom súborov:
         <article class="card"><h3>% NIO</h3><p><span id="stat-nio-percent" class="stat-number">0%</span></p></article>
       </div>
 
-      <div class="charts">
-        <section class="chart-section"><h3>Pomery IO vs NIO</h3><canvas id="chart-io-nio" aria-label="Koláčový graf IO vs NIO" role="img"></canvas></section>
-        <section class="chart-section"><h3>NIO podľa tém</h3><canvas id="chart-topics-nio" aria-label="Stĺpcový graf NIO podľa tém" role="img"></canvas></section>
+      <div class="grid-2" style="margin-top:16px">
+        <section class="chart-section" aria-labelledby="chart-io-nio-title">
+          <h3 id="chart-io-nio-title">Pomery IO vs NIO</h3>
+          <canvas id="chart-io-nio" aria-label="Koláčový graf IO vs NIO" role="img"></canvas>
+        </section>
+
+        <section class="chart-section" aria-labelledby="chart-topics-nio-title">
+          <h3 id="chart-topics-nio-title">NIO podľa tém</h3>
+          <canvas id="chart-topics-nio" aria-label="Stĺpcový graf NIO podľa tém" role="img"></canvas>
+        </section>
       </div>
     </section>
 
+    <!-- WORKPLACES -->
     <section id="view-workplaces" class="view" aria-labelledby="workplaces-title" hidden>
       <h2 id="workplaces-title">Správa pracovísk</h2>
 
@@ -229,13 +267,13 @@ Strom súborov:
         <table class="table" aria-describedby="workplaces-title">
           <thead>
             <tr class="thead-main">
-              <th class="sortable" data-sort="segment" scope="col">Segment <span class="sort-indicator" data-ind="segment">↕</span></th>
-              <th class="sortable" data-sort="costCenter" scope="col">Nákladové stredisko <span class="sort-indicator" data-ind="costCenter">↕</span></th>
-              <th class="sortable" data-sort="equipment" scope="col">Equipment <span class="sort-indicator" data-ind="equipment">↕</span></th>
-              <th class="sortable" data-sort="machineName" scope="col">Názov stroja <span class="sort-indicator" data-ind="machineName">↕</span></th>
-              <th class="sortable" data-sort="status" scope="col">Stav hodnotenia <span class="sort-indicator" data-ind="status">↕</span></th>
-              <th class="sortable" data-sort="ioPercent" scope="col">% IO <span class="sort-indicator" data-ind="ioPercent">↕</span></th>
-              <th scope="col">Akcie</th>
+              <th class="sortable" data-sort="segment">Segment <span class="sort-indicator" data-ind="segment">↕</span></th>
+              <th class="sortable" data-sort="costCenter">Nákladové stredisko <span class="sort-indicator" data-ind="costCenter">↕</span></th>
+              <th class="sortable" data-sort="equipment">Equipment <span class="sort-indicator" data-ind="equipment">↕</span></th>
+              <th class="sortable" data-sort="machineName">Názov stroja <span class="sort-indicator" data-ind="machineName">↕</span></th>
+              <th class="sortable" data-sort="status">Stav hodnotenia <span class="sort-indicator" data-ind="status">↕</span></th>
+              <th class="sortable" data-sort="ioPercent">% IO <span class="sort-indicator" data-ind="ioPercent">↕</span></th>
+              <th>Akcie</th>
             </tr>
             <tr class="thead-filters">
               <th><input id="f-segment" class="filter-input" type="text" placeholder="filter..." /></th>
@@ -258,13 +296,15 @@ Strom súborov:
       </div>
     </section>
 
-    <!-- Skrytá sekcia hodnotenia (spúšťa sa len cez tlačidlo v tabuľke) -->
+    <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
 
       <div class="selector-bar">
         <label for="assessment-workplace">Vyber pracovisko</label>
-        <select id="assessment-workplace" aria-label="Vyber pracovisko pre hodnotenie"><option value="">-- vyber --</option></select>
+        <select id="assessment-workplace" aria-label="Vyber pracovisko pre hodnotenie">
+          <option value="">-- vyber --</option>
+        </select>
         <button id="btn-start-assessment" class="btn primary">Načítať hodnotenie</button>
       </div>
 
@@ -274,10 +314,11 @@ Strom súborov:
           <button type="submit" class="btn primary">Uložiť hodnotenie</button>
           <button type="button" id="btn-clear-assessment" class="btn secondary">Vyčistiť</button>
         </div>
-        <p class="note">Pri voľbe NIO je možné pridať max. 5 fotiek, nastaviť zodpovednú osobu a termín. Vznikne úloha so stavom „Otvorená“.</p>
+        <p class="muted">Pri voľbe NIO je možné pridať max. 5 fotiek, nastaviť zodpovednú osobu a termín. Vznikne úloha so stavom „Otvorená“.</p>
       </form>
     </section>
 
+    <!-- TASKS -->
     <section id="view-tasks" class="view" aria-labelledby="tasks-title" hidden>
       <h2 id="tasks-title">Úlohy z NIO</h2>
 
@@ -304,14 +345,26 @@ Strom súborov:
 
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>Pracovisko</th><th>Téma</th><th>Zodpovedný</th><th>Termín</th><th>Stav</th><th>Fotky</th><th>Akcie</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Pracovisko</th>
+              <th>Téma</th>
+              <th>Zodpovedný</th>
+              <th>Termín</th>
+              <th>Stav</th>
+              <th>Fotky</th>
+              <th>Akcie</th>
+            </tr>
+          </thead>
           <tbody id="tasks-tbody"></tbody>
         </table>
       </div>
     </section>
 
+    <!-- IMPORT/EXPORT + Cloud -->
     <section id="view-importExport" class="view" aria-labelledby="importexport-title" hidden>
       <h2 id="importexport-title">Import/Export dát</h2>
+
       <div class="grid-2">
         <div class="panel">
           <h3>Export databázy</h3>
@@ -328,38 +381,38 @@ Strom súborov:
         </div>
       </div>
 
-      <!-- GitHub Sync Panel -->
-      <div class="panel" style="margin-top:16px;">
-        <h3>GitHub synchronizácia</h3>
-        <p>Pripojenie cez osobný token a cesta k súboru v repozitári (napr. <code>data/bozp_export.json</code>). Token sa neukladá – ostáva len v pamäti prehliadača.</p>
-        <div class="grid-2">
-          <div>
-            <div class="form-row">
-              <label for="gh-owner">Owner</label>
-              <input id="gh-owner" type="text" placeholder="napr. firma" />
+      <!-- Cloud (Gist) UI -->
+      <div class="panel" style="margin-top:16px">
+        <h3>Cloud (GitHub Gist)</h3>
+        <div class="cloudWrap">
+          <button id="cloudBtn" class="btn secondary" type="button">Cloud ▾</button>
+          <div id="cloudPopup" hidden>
+            <div class="cloudRow">
+              <span class="lbl">Stav</span>
+              <span id="cloudState" class="val">Odpojené</span>
             </div>
-            <div class="form-row">
-              <label for="gh-repo">Repozitár</label>
-              <input id="gh-repo" type="text" placeholder="napr. bozp-audit" />
+            <div class="cloudRow">
+              <span class="lbl">Prístup</span>
+              <span id="lockState" class="val" aria-live="polite">Zamknuté</span>
             </div>
-          </div>
-          <div>
-            <div class="form-row">
-              <label for="gh-path">Súbor (cesta)</label>
-              <input id="gh-path" type="text" placeholder="napr. data/bozp_export.json" />
+            <div class="cloudActions" aria-label="Odomknutie">
+              <input id="unlockPass" type="password" aria-label="Heslo" placeholder="Heslo" />
+              <button id="unlockBtn" class="cloudBtn" type="button">Odomknúť</button>
+              <button id="lockBtn" class="cloudBtn requires-auth" type="button">Zamknúť</button>
             </div>
-            <div class="form-row">
-              <label for="gh-token">Token</label>
-              <input id="gh-token" type="password" placeholder="GitHub token" />
+            <div id="unlockError" class="cloudError" role="alert" aria-live="assertive"></div>
+
+            <div class="cloudActions" style="margin-top:6px">
+              <button id="cloudSettingsBtn" class="cloudBtn" type="button">Nastaviť ID + Token</button>
+              <button id="cloudLoadBtn" class="cloudBtn requires-auth" type="button">Načítať</button>
+              <button id="cloudSaveBtn" class="cloudBtn requires-auth" type="button">Uložiť</button>
+              <button id="cloudAutoBtn" class="cloudBtn requires-auth" type="button" title="Auto nahrávanie po zmenách">AutoSync: OFF</button>
+              <button id="cloudCheckBtn" class="cloudBtn requires-auth" type="button" title="Skontrolovať API limity">Limit</button>
+              <button id="cloudSignOutBtn" class="cloudBtn requires-auth" type="button">Odhlásiť</button>
             </div>
+            <div class="smallNote">Backend: GitHub Gist (súkromný). Token so scope „gist“. Súbor: <code>bozp_export.json</code>.</div>
           </div>
         </div>
-        <div class="form-actions">
-          <button id="btn-gh-test" class="btn secondary">Otestovať pripojenie</button>
-          <button id="btn-gh-download" class="btn secondary">Stiahnuť z GitHub (import)</button>
-          <button id="btn-gh-upload" class="btn primary">Nahrať na GitHub (sync)</button>
-        </div>
-        <p id="gh-status" role="status" aria-live="polite"></p>
       </div>
     </section>
   </main>
@@ -379,200 +432,409 @@ Strom súborov:
     </div>
   </div>
 
-  <!-- DB vrstva -->
+  <!-- Cloud Settings Modal (inline) -->
+  <div id="cloudOverlay" class="cloudOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
+    <div class="cloudModal">
+      <div class="cloudHeader">
+        <strong id="cloudTitle">Cloud nastavenia (GitHub Gist)</strong>
+        <button id="cloudClose" class="btn secondary" type="button">Zavrieť</button>
+      </div>
+      <div class="cloudBody">
+        <div class="cloudGrid">
+          <div>
+            <label for="cloudGistId">Gist ID</label>
+            <input id="cloudGistId" type="text" placeholder="napr. a1b2c3d4e5f6..." />
+            <div class="smallNote">ID nájdeš v URL gistu: https://gist.github.com/uzivatel/<b>ID</b></div>
+          </div>
+          <div>
+            <label for="cloudToken">GitHub Token (scope: gist)</label>
+            <input id="cloudToken" type="password" placeholder="pat_... alebo ghp_..." />
+            <div class="smallNote">Token sa uloží do localStorage tohto prehliadača. Uchovávaj ho v tajnosti.</div>
+          </div>
+        </div>
+        <div class="cloudActions">
+          <button id="cloudSaveCreds" class="btn primary" type="button">Uložiť nastavenia</button>
+          <button id="cloudCreateGist" class="btn secondary requires-auth" type="button" title="Vytvorí súkromný gist s prázdnym súborom">Vytvoriť nový Gist</button>
+        </div>
+        <div id="cloudError" class="cloudError"></div>
+        <div id="cloudNote" class="smallNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB (IndexedDB with in-memory fallback) -->
   <script>
-    const DB_NAME = 'bozpApp';
-    const DB_VERSION = 1;
-    const STORE_WORKPLACES = 'workplaces';
-    const STORE_ASSESSMENTS = 'assessments';
-    const STORE_TASKS = 'tasks';
-    const STORE_PHOTOS = 'photos';
+    (function(){
+      const DB_NAME = 'bozpAppDB';
+      const DB_VERSION = 1;
 
-    function openDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if (!db.objectStoreNames.contains(STORE_WORKPLACES)) {
-            const ws = db.createObjectStore(STORE_WORKPLACES, { keyPath: 'id', autoIncrement: true });
-            ws.createIndex('by_segment', 'segment');
-            ws.createIndex('by_costCenter', 'costCenter');
-          }
-          if (!db.objectStoreNames.contains(STORE_ASSESSMENTS)) {
-            const as = db.createObjectStore(STORE_ASSESSMENTS, { keyPath: 'workplaceId' });
-            as.createIndex('by_updated', 'updatedAt');
-          }
-          if (!db.objectStoreNames.contains(STORE_TASKS)) {
-            const ts = db.createObjectStore(STORE_TASKS, { keyPath: 'id', autoIncrement: true });
-            ts.createIndex('by_workplace', 'workplaceId');
-            ts.createIndex('by_status', 'status');
-            ts.createIndex('by_topic', 'topicKey');
-          }
-          if (!db.objectStoreNames.contains(STORE_PHOTOS)) {
-            const ps = db.createObjectStore(STORE_PHOTOS, { keyPath: 'id', autoIncrement: true });
-            ps.createIndex('by_task', 'taskId');
-            ps.createIndex('by_workplace', 'workplaceId');
-          }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
+      let useMemory = false;
+      const mem = {
+        workplaces: [],
+        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
+        tasks: [],
+        photos: [], // {id, taskId, workplaceId, topicKey, name, blob, createdAt}
+        ids: { workplace: 1, task: 1, photo: 1 }
+      };
 
-    async function runTx(storeNames, mode, fn) {
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(storeNames, mode);
-        const stores = storeNames.reduce((acc, name) => (acc[name] = tx.objectStore(name), acc), {});
-        const result = fn(stores, tx);
-        tx.oncomplete = () => Promise.resolve(result).then(resolve).catch(reject);
-        tx.onerror = () => reject(tx.error);
-      });
-    }
+      function enableMemoryFallback(reason){
+        console.warn('IndexedDB unavailable, using in-memory fallback. Reason:', reason);
+        useMemory = true;
+      }
 
-    async function addWorkplace(data) {
-      return runTx([STORE_WORKPLACES], 'readwrite', (s) => new Promise((resolve, reject) => {
-        const req = s[STORE_WORKPLACES].add({
-          segment: (data.segment || '').trim(),
-          costCenter: (data.costCenter || '').trim(),
-          equipment: (data.equipment || '').trim(),
-          machineName: (data.machineName || '').trim(),
-          createdAt: Date.now()
+      function openDb(){
+        return new Promise((resolve, reject) => {
+          if (!window.indexedDB) {
+            enableMemoryFallback('indexedDB not supported');
+            resolve(null);
+            return;
+          }
+          try {
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+            req.onupgradeneeded = (e) => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains('workplaces')) {
+                db.createObjectStore('workplaces', { keyPath: 'id', autoIncrement: true });
+              }
+              if (!db.objectStoreNames.contains('assessments')) {
+                db.createObjectStore('assessments', { keyPath: 'workplaceId' });
+              }
+              if (!db.objectStoreNames.contains('tasks')) {
+                const store = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('status', 'status', { unique: false });
+              }
+              if (!db.objectStoreNames.contains('photos')) {
+                const store = db.createObjectStore('photos', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('taskId', 'taskId', { unique: false });
+              }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror   = () => {
+              enableMemoryFallback(req.error?.name || req.error || 'open error');
+              resolve(null);
+            };
+          } catch (err) {
+            enableMemoryFallback(err?.message || err);
+            resolve(null);
+          }
         });
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function putWorkplaceWithId(record) { return runTx([STORE_WORKPLACES], 'readwrite', (s) => s[STORE_WORKPLACES].put(record)); }
-    async function listWorkplaces() {
-      return runTx([STORE_WORKPLACES], 'readonly', (s) => new Promise((resolve, reject) => {
-        const res = []; const req = s[STORE_WORKPLACES].openCursor();
-        req.onsuccess = (e) => { const c = e.target.result; if (c) { res.push(c.value); c.continue(); } else resolve(res); };
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function deleteWorkplace(id) {
-      return runTx([STORE_WORKPLACES, STORE_ASSESSMENTS, STORE_TASKS, STORE_PHOTOS], 'readwrite', (s) => {
-        s[STORE_WORKPLACES].delete(id);
-        s[STORE_ASSESSMENTS].delete(id);
-        const scanTasks = s[STORE_TASKS].index('by_workplace').openCursor(IDBKeyRange.only(id));
-        scanTasks.onsuccess = (e) => {
-          const c = e.target.result;
-          if (c) {
-            const taskId = c.value.id;
-            s[STORE_TASKS].delete(taskId);
-            const scanPhotos = s[STORE_PHOTOS].index('by_task').openCursor(IDBKeyRange.only(taskId));
-            scanPhotos.onsuccess = (ev) => { const cp = ev.target.result; if (cp) { s[STORE_PHOTOS].delete(cp.value.id); cp.continue(); } };
-            c.continue();
+      }
+
+      function tx(db, stores, mode){
+        if(!db) return null;
+        return db.transaction(stores, mode);
+      }
+      function getAll(store){
+        return new Promise((resolve, reject) => {
+          if ('getAll' in store) {
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+          } else {
+            const out = [];
+            const req = store.openCursor();
+            req.onsuccess = (e) => {
+              const cursor = e.target.result;
+              if (cursor) { out.push(cursor.value); cursor.continue(); }
+              else resolve(out);
+            };
+            req.onerror = () => reject(req.error);
           }
-        };
-      });
-    }
-
-    async function getAssessment(workplaceId) {
-      return runTx([STORE_ASSESSMENTS], 'readonly', (s) => new Promise((resolve, reject) => {
-        const req = s[STORE_ASSESSMENTS].get(workplaceId);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function saveAssessment(workplaceId, statuses) {
-      return runTx([STORE_ASSESSMENTS], 'readwrite', (s) => s[STORE_ASSESSMENTS].put({ workplaceId, statuses, updatedAt: Date.now() }));
-    }
-
-    async function addTask(task) {
-      return runTx([STORE_TASKS], 'readwrite', (s) => new Promise((resolve, reject) => {
-        const req = s[STORE_TASKS].add({
-          workplaceId: task.workplaceId,
-          topicKey: task.topicKey,
-          responsible: task.responsible || '',
-          dueDate: task.dueDate || null,
-          status: task.status || 'Otvorená',
-          createdAt: Date.now()
         });
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function updateTask(task) { return runTx([STORE_TASKS], 'readwrite', (s) => s[STORE_TASKS].put(task)); }
-    async function listTasks(filter = {}) {
-      return runTx([STORE_TASKS], 'readonly', (s) => new Promise((resolve, reject) => {
-        const res = []; const req = s[STORE_TASKS].openCursor();
-        req.onsuccess = (e) => { const c = e.target.result; if (c) { const t = c.value; if (!filter.status || t.status === filter.status) res.push(t); c.continue(); } else resolve(res); };
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function deleteTask(id) {
-      return runTx([STORE_TASKS, STORE_PHOTOS], 'readwrite', (s) => {
-        s[STORE_TASKS].delete(id);
-        const scanPhotos = s[STORE_PHOTOS].index('by_task').openCursor(IDBKeyRange.only(id));
-        scanPhotos.onsuccess = (e) => { const c = e.target.result; if (c) { s[STORE_PHOTOS].delete(c.value.id); c.continue(); } };
-      });
-    }
+      }
+      function getIndexAll(index, key){
+        return new Promise((resolve, reject) => {
+          const out = [];
+          const req = index.openCursor(key);
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if (cursor) { out.push(cursor.value); cursor.continue(); }
+            else resolve(out);
+          };
+          req.onerror = () => reject(req.error);
+        });
+      }
+      function getByKey(store, key){
+        return new Promise((resolve, reject) => {
+          const req = store.get(key);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      function put(store, value){
+        return new Promise((resolve, reject) => {
+          const req = store.put(value);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      function add(store, value){
+        return new Promise((resolve, reject) => {
+          const req = store.add(value);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      function del(store, key){
+        return new Promise((resolve, reject) => {
+          const req = store.delete(key);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
 
-    async function countPhotosForTask(taskId) {
-      return runTx([STORE_PHOTOS], 'readonly', (s) => new Promise((resolve) => {
-        let n = 0; const req = s[STORE_PHOTOS].index('by_task').openCursor(IDBKeyRange.only(taskId));
-        req.onsuccess = (e) => { const c = e.target.result; if (c) { n++; c.continue(); } else resolve(n); };
-      }));
-    }
-    async function addPhoto(taskId, workplaceId, topicKey, file) {
-      return runTx([STORE_PHOTOS], 'readwrite', (s) => new Promise((resolve, reject) => {
-        const req = s[STORE_PHOTOS].add({ taskId, workplaceId, topicKey, blob: file, name: file.name, type: file.type, size: file.size, createdAt: Date.now() });
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      }));
-    }
-    async function listPhotosByTask(taskId) {
-      return runTx([STORE_PHOTOS], 'readonly', (s) => new Promise((resolve) => {
-        const out = []; const req = s[STORE_PHOTOS].index('by_task').openCursor(IDBKeyRange.only(taskId));
-        req.onsuccess = (e) => { const c = e.target.result; if (c) { out.push(c.value); c.continue(); } else resolve(out); };
-      }));
-    }
+      async function memCountPhotosForTask(taskId){
+        return mem.photos.filter(p => p.taskId === taskId).length;
+      }
 
-    async function exportJSON() {
-      const workplaces = await listWorkplaces();
-      const assessments = await runTx([STORE_ASSESSMENTS], 'readonly', (s) => new Promise((resolve) => {
-        const out = []; const req = s[STORE_ASSESSMENTS].openCursor();
-        req.onsuccess = (e) => { const c = e.target.result; if (c) { out.push(c.value); c.continue(); } else resolve(out); };
-      }));
-      const tasks = await listTasks();
-      const photos = await runTx([STORE_PHOTOS], 'readonly', (s) => new Promise((resolve) => {
-        const out = []; const req = s[STORE_PHOTOS].openCursor();
-        req.onsuccess = (e) => {
-          const c = e.target.result;
-          if (c) {
-            const ph = c.value;
-            out.push({ id: ph.id, taskId: ph.taskId, workplaceId: ph.workplaceId, topicKey: ph.topicKey, name: ph.name, type: ph.type, size: ph.size, createdAt: ph.createdAt });
-            c.continue();
-          } else resolve(out);
-        };
-      }));
-      return { workplaces, assessments, tasks, photosMeta: photos };
-    }
-    async function importJSON(data) {
-      const db = await openDB(); db.close();
-      await new Promise((resolve, reject) => { const delReq = indexedDB.deleteDatabase(DB_NAME); delReq.onsuccess = resolve; delReq.onerror = () => reject(delReq.error); });
-      await openDB();
-      if (Array.isArray(data.workplaces)) { for (const w of data.workplaces) await putWorkplaceWithId(w); }
-      if (Array.isArray(data.assessments)) { await runTx([STORE_ASSESSMENTS], 'readwrite', (s) => { data.assessments.forEach(a => s[STORE_ASSESSMENTS].put(a)); }); }
-      if (Array.isArray(data.tasks)) { await runTx([STORE_TASKS], 'readwrite', (s) => { data.tasks.forEach(t => s[STORE_TASKS].put(t)); }); }
-      return true;
-    }
+      window.DB = {
+        async addWorkplace(w){
+          const db = await openDb();
+          const rec = {
+            segment: String(w.segment||'').trim(),
+            costCenter: String(w.costCenter||'').trim(),
+            equipment: String(w.equipment||'').trim(),
+            machineName: String(w.machineName||'').trim(),
+            createdAt: Date.now()
+          };
+          if (useMemory) {
+            const id = mem.ids.workplace++;
+            mem.workplaces.push({ id, ...rec });
+            return id;
+          }
+          const t = tx(db, ['workplaces'], 'readwrite');
+          const store = t.objectStore('workplaces');
+          const id = await add(store, rec);
+          return id;
+        },
+        async listWorkplaces(){
+          const db = await openDb();
+          if (useMemory) return [...mem.workplaces];
+          const t = tx(db, ['workplaces'], 'readonly');
+          const store = t.objectStore('workplaces');
+          return await getAll(store);
+        },
+        async deleteWorkplace(id){
+          const db = await openDb();
+          if (useMemory) {
+            mem.workplaces = mem.workplaces.filter(w => w.id !== id);
+            mem.assessments.delete(id);
+            const tasksToDelete = mem.tasks.filter(t => t.workplaceId === id).map(t => t.id);
+            mem.tasks = mem.tasks.filter(t => t.workplaceId !== id);
+            mem.photos = mem.photos.filter(p => !tasksToDelete.includes(p.taskId));
+            return;
+          }
+          // Delete workplace
+          const t1 = tx(db, ['workplaces'], 'readwrite');
+          await del(t1.objectStore('workplaces'), id);
+          // Delete assessment
+          const t2 = tx(db, ['assessments'], 'readwrite');
+          await del(t2.objectStore('assessments'), id);
+          // Delete tasks and related photos
+          const t3 = tx(db, ['tasks','photos'], 'readwrite');
+          const tasksStore = t3.objectStore('tasks');
+          const photosStore = t3.objectStore('photos');
+          const tasks = await getAll(tasksStore);
+          const related = tasks.filter(x => x.workplaceId === id).map(x => x.id);
+          for (const tid of related) await del(tasksStore, tid);
+          // photos by taskId index
+          const idx = photosStore.index('taskId');
+          for (const tid of related) {
+            const phs = await getIndexAll(idx, tid);
+            for (const p of phs) await del(photosStore, p.id);
+          }
+        },
 
-    window.DB = {
-      addWorkplace, listWorkplaces, deleteWorkplace,
-      getAssessment, saveAssessment,
-      addTask, updateTask, listTasks, deleteTask,
-      countPhotosForTask, addPhoto, listPhotosByTask,
-      exportJSON, importJSON
-    };
+        async getAssessment(workplaceId){
+          const db = await openDb();
+          if (useMemory) return mem.assessments.get(workplaceId) || null;
+          const t = tx(db, ['assessments'], 'readonly');
+          return await getByKey(t.objectStore('assessments'), workplaceId);
+        },
+        async saveAssessment(workplaceId, statuses){
+          const db = await openDb();
+          const rec = { workplaceId, statuses: statuses||{}, savedAt: Date.now() };
+          if (useMemory) { mem.assessments.set(workplaceId, rec); return; }
+          const t = tx(db, ['assessments'], 'readwrite');
+          await put(t.objectStore('assessments'), rec);
+        },
+
+        async listTasks(filter={}){
+          const db = await openDb();
+          const status = filter.status || '';
+          if (useMemory) {
+            const arr = [...mem.tasks];
+            return status ? arr.filter(t => t.status === status) : arr;
+          }
+          const t = tx(db, ['tasks'], 'readonly');
+          const store = t.objectStore('tasks');
+          if (status) {
+            const idx = store.index('status');
+            return await getIndexAll(idx, status);
+          } else {
+            return await getAll(store);
+          }
+        },
+        async addTask(task){
+          const db = await openDb();
+          const rec = {
+            workplaceId: task.workplaceId,
+            topicKey: task.topicKey,
+            responsible: task.responsible || '',
+            dueDate: task.dueDate || null,
+            status: task.status || 'Otvorená',
+            createdAt: Date.now()
+          };
+          if (useMemory) {
+            const id = mem.ids.task++;
+            mem.tasks.push({ id, ...rec });
+            return id;
+          }
+          const t = tx(db, ['tasks'], 'readwrite');
+          const store = t.objectStore('tasks');
+          const id = await add(store, rec);
+          return id;
+        },
+        async updateTask(task){
+          const db = await openDb();
+          if (useMemory) {
+            const i = mem.tasks.findIndex(x => x.id === task.id);
+            if (i >= 0) mem.tasks[i] = { ...mem.tasks[i], ...task };
+            return;
+          }
+          const t = tx(db, ['tasks'], 'readwrite');
+          await put(t.objectStore('tasks'), task);
+        },
+        async deleteTask(taskId){
+          const db = await openDb();
+          if (useMemory) {
+            mem.tasks = mem.tasks.filter(t => t.id !== taskId);
+            mem.photos = mem.photos.filter(p => p.taskId !== taskId);
+            return;
+          }
+          const t = tx(db, ['tasks','photos'], 'readwrite');
+          await del(t.objectStore('tasks'), taskId);
+          // delete photos for task
+          const photosStore = t.objectStore('photos');
+          const idx = photosStore.index('taskId');
+          const phs = await getIndexAll(idx, taskId);
+          for (const p of phs) await del(photosStore, p.id);
+        },
+
+        async listPhotosByTask(taskId){
+          const db = await openDb();
+          if (useMemory) return mem.photos.filter(p => p.taskId === taskId).sort((a,b)=>a.createdAt-b.createdAt);
+          const t = tx(db, ['photos'], 'readonly');
+          const idx = t.objectStore('photos').index('taskId');
+          const arr = await getIndexAll(idx, taskId);
+          return arr.sort((a,b)=>a.createdAt-b.createdAt);
+        },
+        async countPhotosForTask(taskId){
+          const db = await openDb();
+          if (useMemory) return memCountPhotosForTask(taskId);
+          const t = tx(db, ['photos'], 'readonly');
+          const idx = t.objectStore('photos').index('taskId');
+          const arr = await getIndexAll(idx, taskId);
+          return arr.length;
+        },
+        async addPhoto(taskId, workplaceId, topicKey, file){
+          const db = await openDb();
+          const name = file?.name || 'photo';
+          let blob;
+          try {
+            const buf = await file.arrayBuffer();
+            blob = new Blob([buf], { type: file.type || 'application/octet-stream' });
+          } catch {
+            blob = file || new Blob([], { type: 'application/octet-stream' });
+          }
+          const rec = {
+            taskId, workplaceId: workplaceId||null, topicKey: topicKey||null,
+            name, blob, createdAt: Date.now()
+          };
+          if (useMemory) {
+            const id = mem.ids.photo++;
+            mem.photos.push({ id, ...rec });
+            return id;
+          }
+          const t = tx(db, ['photos'], 'readwrite');
+          const store = t.objectStore('photos');
+          const id = await add(store, rec);
+          return id;
+        },
+
+        async exportJSON(){
+          // Note: Photos (binary) are NOT exported to keep JSON small and text-only.
+          const workplaces = await this.listWorkplaces();
+          const tasks = await this.listTasks();
+          // assessments: collect per workplace
+          const outAssess = [];
+          for (const w of workplaces) {
+            const a = await this.getAssessment(w.id);
+            if (a) outAssess.push(a);
+          }
+          // Provide photos count per task (metadata only)
+          const photosMeta = [];
+          for (const t of tasks) {
+            const c = await this.countPhotosForTask(t.id);
+            photosMeta.push({ taskId: t.id, count: c });
+          }
+          return {
+            version: 1,
+            workplaces,
+            assessments: outAssess,
+            tasks,
+            photosMeta
+          };
+        },
+
+        async importJSON(data){
+          // Clear current stores and import (photos not included)
+          const db = await openDb();
+          const srcW = data.workplaces || [];
+          const srcA = data.assessments || [];
+          const srcT = data.tasks || [];
+
+          if (useMemory) {
+            mem.workplaces = srcW.map(w => ({...w}));
+            mem.assessments = new Map();
+            for (const a of srcA) mem.assessments.set(a.workplaceId, {...a});
+            mem.tasks = srcT.map(t => ({...t}));
+            mem.photos = []; // not imported
+            // reset counters
+            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id)) || 0) + 1;
+            mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id)) || 0) + 1;
+            mem.ids.photo = 1;
+            return;
+          }
+
+          // Delete all
+          {
+            const t = tx(db, ['workplaces','assessments','tasks','photos'], 'readwrite');
+            for (const storeName of ['workplaces','assessments','tasks','photos']) {
+              const st = t.objectStore(storeName);
+              const items = await getAll(st);
+              for (const it of items) await del(st, it[st.keyPath]);
+            }
+          }
+          // Import
+          {
+            const t = tx(db, ['workplaces','assessments','tasks'], 'readwrite');
+            const wStore = t.objectStore('workplaces');
+            const aStore = t.objectStore('assessments');
+            const tStore = t.objectStore('tasks');
+            for (const w of srcW) await put(wStore, w);
+            for (const a of srcA) await put(aStore, a);
+            for (const tt of srcT) await put(tStore, tt);
+          }
+        }
+      };
+    })();
   </script>
 
-  <!-- Charts helper (IIFE to avoid global) -->
+  <!-- Charts helper (no global TOPICS leakage) -->
   <script>
-    (function () {
-      const TOPICS = [
+    (function(){
+      const CHART_TOPICS = [
         {key:'ovladacie_panely', name:'ovládacie panely'},
         {key:'suporty', name:'suporty'},
         {key:'koncove_spinace', name:'koncové spínače'},
@@ -589,14 +851,22 @@ Strom súborov:
         {key:'prebierka_stroja', name:'prebierka stroja'}
       ];
 
-      let chartPie, chartBar;
+      let chartPie=null, chartBar=null;
 
       function renderPie(ioCount, nioCount) {
         const ctx = document.getElementById('chart-io-nio').getContext('2d');
         if (chartPie) chartPie.destroy();
         chartPie = new Chart(ctx, {
           type: 'pie',
-          data: { labels: ['IO', 'NIO'], datasets: [{ data: [ioCount, nioCount], backgroundColor: ['rgb(161,200,97)', 'rgb(255,255,96)'], borderColor: ['rgb(0,0,0)','rgb(0,0,0)'], borderWidth: 1 }] },
+          data: {
+            labels: ['IO', 'NIO'],
+            datasets: [{
+              data: [ioCount, nioCount],
+              backgroundColor: ['rgb(161,200,97)', 'rgb(255,255,96)'],
+              borderColor: ['rgb(0,0,0)', 'rgb(0,0,0)'],
+              borderWidth: 1
+            }]
+          },
           options: { plugins: { legend: { position: 'bottom' } } }
         });
       }
@@ -606,833 +876,900 @@ Strom súborov:
         if (chartBar) chartBar.destroy();
         chartBar = new Chart(ctx, {
           type: 'bar',
-          data: { labels: TOPICS.map(t => t.name), datasets: [{ label: 'Počet NIO', data: TOPICS.map(t => topicNioCounts[t.key] || 0), backgroundColor: 'rgb(29,155,178)', borderColor: 'rgb(0,0,0)', borderWidth: 1 }] },
-          options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom' } } }
+          data: {
+            labels: CHART_TOPICS.map(t => t.name),
+            datasets: [{
+              label: 'Počet NIO',
+              data: CHART_TOPICS.map(t => topicNioCounts[t.key] || 0),
+              backgroundColor: 'rgb(29,155,178)',
+              borderColor: 'rgb(0,0,0)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            indexAxis: 'x',
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { position: 'bottom' } }
+          }
         });
       }
 
-      window.Charts = { renderPie, renderBar, TOPICS };
+      window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
 
-  <!-- Hlavná logika -->
+  <!-- Main logic with local alias TOPICS_LIST to avoid global collision -->
   <script>
-    const APP_TOPICS = window.Charts.TOPICS;
-    const ROUTES = ['dashboard', 'workplaces', 'assessment', 'tasks', 'importExport'];
+    (function(){
+      const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
+      const ROUTES = ['dashboard', 'workplaces', 'assessment', 'tasks', 'importExport'];
 
-    let sortKey = 'segment';
-    let sortDir = 'asc';
+      let sortKey = 'segment';
+      let sortDir = 'asc';
 
-    document.addEventListener('DOMContentLoaded', init);
+      const AUTH_PASSWORD = '31104986';
+      const LS_AUTH_KEY  = 'bozpApp/authed';
+      const LS_SYNC_CREDS_KEY = 'bozpApp/cloudCreds';
+      const GIST_FILE_NAME = 'bozp_export.json';
 
-    function init() {
-      document.getElementById('year').textContent = new Date().getFullYear();
+      let syncCreds = null;   // { gistId, token, auto }
+      let rateLimit = { remaining:null, reset:null };
+      let syncTimer = null, syncBusy=false, syncBackoffMs=8000;
 
-      // ALWAYS bind modal close globally (fixes “krížik” not closing)
-      document.getElementById('modal-close').addEventListener('click', closeModal);
-      document.getElementById('modal').addEventListener('click', (e) => {
-        if (e.target.id === 'modal') closeModal();
-      });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
-      });
+      document.addEventListener('DOMContentLoaded', init);
 
-      initRouting();
-      refreshFilters().then(() => {
-        const segEl = document.getElementById('filter-segment');
-        const ccEl  = document.getElementById('filter-costcenter');
-        ['change','input'].forEach(ev => {
-          segEl.addEventListener(ev, updateDashboard);
-          ccEl.addEventListener(ev, updateDashboard);
-        });
-        document.getElementById('btn-clear-filters').addEventListener('click', () => {
-          segEl.value = '';
-          ccEl.value = '';
+      function init(){
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+        document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        initRouting();
+        refreshFilters().then(() => {
+          const segEl = document.getElementById('filter-segment');
+          const ccEl  = document.getElementById('filter-costcenter');
+          ['change','input'].forEach(ev => {
+            segEl.addEventListener(ev, updateDashboard);
+            ccEl.addEventListener(ev, updateDashboard);
+          });
+          document.getElementById('btn-clear-filters').addEventListener('click', () => {
+            segEl.value = ''; ccEl.value = ''; updateDashboard();
+          });
           updateDashboard();
         });
-        updateDashboard();
-      });
 
-      bindWorkplaces();
-      bindAssessment();
-      bindTasks();
-      bindImportExport();
-      bindGitHubSync();
-    }
+        bindWorkplaces();
+        bindAssessment();
+        bindTasks();
+        bindImportExport();
 
-    function initRouting() {
-      const links = document.querySelectorAll('.nav-link');
-      links.forEach(a => a.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigate(a.getAttribute('data-route'));
-      }));
-      navigate('dashboard');
-    }
-    function navigate(route) {
-      ROUTES.forEach(r => {
-        const v = document.getElementById(`view-${r}`);
-        const l = document.querySelector(`.nav-link[data-route="${r}"]`);
-        if (v) {
-          const active = r === route;
-          v.hidden = !active;
-          if (l) {
-            if (active) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current');
-          }
-        }
-      });
-    }
-
-    function createEl(tag, attrs = {}, children = []) {
-      const el = document.createElement(tag);
-      Object.entries(attrs).forEach(([k, v]) => { if (k === 'class') el.className = v; else if (k === 'html') el.innerHTML = v; else el.setAttribute(k, v); });
-      children.forEach(ch => el.appendChild(ch));
-      return el;
-    }
-    function fmtDate(d) { if (!d) return ''; const dt = new Date(d); return dt.toLocaleDateString(); }
-    function downloadBlob(blob, filename) {
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    }
-    function toCSV(rows, headers) {
-      const esc = (v) => { if (v == null) return ''; const s = String(v); return (s.includes('"') || s.includes(';') || s.includes('\n')) ? `"${s.replace(/"/g,'""')}"` : s; };
-      return headers.join(';') + '\n' + rows.map(r => headers.map(h => esc(r[h])).join(';')).join('\n');
-    }
-    function parseCSV(text) {
-      const delim = (text.match(/;/g) || []).length >= (text.match(/,/g) || []).length ? ';' : ',';
-      const lines = text.split(/\r\n|\n|\r/).filter(l => l.trim().length > 0);
-      const rows = [];
-      for (const line of lines) {
-        const row = []; let cur = ''; let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-          const ch = line[i];
-          if (ch === '"') { if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = !inQuotes; }
-          else if (ch === delim && !inQuotes) { row.push(cur); cur = ''; }
-          else { cur += ch; }
-        }
-        row.push(cur);
-        rows.push(row.map(v => v.trim()));
-      }
-      return rows;
-    }
-
-    async function refreshFilters() {
-      const workplaces = await DB.listWorkplaces();
-      const segments = Array.from(new Set(workplaces.map(w => w.segment))).sort();
-      const costCenters = Array.from(new Set(workplaces.map(w => w.costCenter))).sort();
-
-      const fillSelect = (sel, items) => {
-        sel.innerHTML = '<option value="">Všetko</option>';
-        items.forEach(i => {
-          const opt = createEl('option', { value: i });
-          opt.textContent = i;
-          sel.appendChild(opt);
-        });
-      };
-
-      fillSelect(document.getElementById('filter-segment'), segments);
-      fillSelect(document.getElementById('filter-costcenter'), costCenters);
-      fillSelect(document.getElementById('filter-task-segment'), segments);
-      fillSelect(document.getElementById('filter-task-costcenter'), costCenters);
-    }
-
-    async function updateDashboard() {
-      const seg = document.getElementById('filter-segment').value || '';
-      const cc = document.getElementById('filter-costcenter').value || '';
-
-      const workplaces = await DB.listWorkplaces();
-      const filteredWorkplaces = workplaces.filter(w => (!seg || w.segment === seg) && (!cc || w.costCenter === cc));
-
-      const assessments = [];
-      for (const w of filteredWorkplaces) {
-        const a = await DB.getAssessment(w.id);
-        assessments.push(a || null);
+        bindCloudUI();
+        loadSyncCreds();
+        applyAuthFromStorage();
       }
 
-      const totalWorkplaces = filteredWorkplaces.length;
-      const assessedWorkplaces = assessments.filter(a => a && a.statuses && Object.keys(a.statuses).length > 0).length;
-
-      let ioTotal = 0;
-      let nioTotal = 0;
-      const topicNioCounts = {};
-      APP_TOPICS.forEach(t => topicNioCounts[t.key] = 0);
-
-      assessments.forEach(a => {
-        if (!a || !a.statuses) return;
-        Object.entries(a.statuses).forEach(([topicKey, val]) => {
-          if (val === 'IO') ioTotal++;
-          else if (val === 'NIO') {
-            nioTotal++;
-            topicNioCounts[topicKey] = (topicNioCounts[topicKey] || 0) + 1;
+      function initRouting(){
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(a => a.addEventListener('click', (e) => {
+          e.preventDefault();
+          navigate(a.getAttribute('data-route'));
+        }));
+        navigate('dashboard');
+      }
+      function navigate(route) {
+        ROUTES.forEach(r => {
+          const v = document.getElementById(`view-${r}`);
+          const l = document.querySelector(`.nav-link[data-route="${r}"]`);
+          if (v) {
+            const active = r === route;
+            v.hidden = !active;
+            if (l) { if (active) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current'); }
           }
         });
-      });
-
-      const percentIO = (ioTotal + nioTotal) > 0 ? Math.round((ioTotal / (ioTotal + nioTotal)) * 100) : 0;
-      const percentNIO = 100 - percentIO;
-
-      document.getElementById('stat-total-workplaces').textContent = totalWorkplaces;
-      document.getElementById('stat-assessed-workplaces').textContent = assessedWorkplaces;
-      document.getElementById('stat-io-percent').textContent = percentIO + '%';
-      document.getElementById('stat-nio-percent').textContent = percentNIO + '%';
-
-      Charts.renderPie(ioTotal, nioTotal);
-      Charts.renderBar(topicNioCounts);
-    }
-
-    function bindWorkplaces() {
-      const form = document.getElementById('form-add-workplace');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await DB.addWorkplace({
-          segment: document.getElementById('wp-segment').value,
-          costCenter: document.getElementById('wp-costcenter').value,
-          equipment: document.getElementById('wp-equipment').value,
-          machineName: document.getElementById('wp-machine').value
-        });
-        form.reset();
-        await loadWorkplacesTable();
-        await refreshFilters();
-        updateDashboard();
-        await fillAssessmentSelector();
-      });
-
-      document.getElementById('search-workplaces').addEventListener('input', loadWorkplacesTable);
-
-      ['f-segment','f-costcenter','f-equipment','f-machine','f-status','f-io-min']
-        .forEach(id => document.getElementById(id).addEventListener('input', () => loadWorkplacesTable()));
-
-      document.querySelectorAll('.table thead .sortable').forEach(th => {
-        th.addEventListener('click', () => {
-          const key = th.getAttribute('data-sort');
-          if (key === sortKey) sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
-          else { sortKey = key; sortDir = 'asc'; }
-          updateSortIndicators();
-          loadWorkplacesTable();
-        });
-      });
-
-      document.getElementById('btn-export-workplaces').addEventListener('click', exportWorkplacesCSV);
-
-      loadWorkplacesTable();
-      updateSortIndicators();
-    }
-
-    function updateSortIndicators() {
-      document.querySelectorAll('.sort-indicator').forEach(el => {
-        const key = el.getAttribute('data-ind');
-        if (key === sortKey) el.textContent = sortDir === 'asc' ? '▲' : '▼';
-        else el.textContent = '↕';
-      });
-    }
-
-    function computeIoPercent(assessment) {
-      if (!assessment || !assessment.statuses) return { percent: 0, assessed: false };
-      let io = 0, nio = 0;
-      for (const v of Object.values(assessment.statuses)) {
-        if (v === 'IO') io++;
-        else if (v === 'NIO') nio++;
-      }
-      const total = io + nio;
-      return { percent: total > 0 ? Math.round((io / total) * 100) : 0, assessed: total > 0 };
-    }
-
-    async function loadWorkplacesTable() {
-      const q = (document.getElementById('search-workplaces').value || '').toLowerCase();
-
-      const fSeg = document.getElementById('f-segment').value.toLowerCase();
-      const fCc  = document.getElementById('f-costcenter').value.toLowerCase();
-      const fEq  = document.getElementById('f-equipment').value.toLowerCase();
-      const fMa  = document.getElementById('f-machine').value.toLowerCase();
-      const fSt  = document.getElementById('f-status').value;
-      const fIoMin = parseInt(document.getElementById('f-io-min').value, 10);
-
-      const tbody = document.getElementById('workplaces-tbody'); tbody.innerHTML = '';
-
-      const workplaces = await DB.listWorkplaces();
-      const data = [];
-      for (const w of workplaces) {
-        const assessment = await DB.getAssessment(w.id);
-        const { percent, assessed } = computeIoPercent(assessment);
-        data.push({
-          ...w,
-          status: assessed ? 'Hodnotené' : 'Neohodnotené',
-          ioPercent: percent
-        });
       }
 
-      const filtered = data.filter(w => {
-        const hay = `${w.segment} ${w.costCenter} ${w.equipment} ${w.machineName}`.toLowerCase();
-        if (q && !hay.includes(q)) return false;
-        if (fSeg && !String(w.segment).toLowerCase().includes(fSeg)) return false;
-        if (fCc && !String(w.costCenter).toLowerCase().includes(fCc)) return false;
-        if (fEq && !String(w.equipment).toLowerCase().includes(fEq)) return false;
-        if (fMa && !String(w.machineName).toLowerCase().includes(fMa)) return false;
-        if (fSt && w.status !== fSt) return false;
-        if (!isNaN(fIoMin) && w.ioPercent < fIoMin) return false;
-        return true;
-      });
-
-      const dir = sortDir === 'asc' ? 1 : -1;
-      filtered.sort((a,b) => {
-        let va = a[sortKey], vb = b[sortKey];
-        if (sortKey === 'ioPercent') { va = Number(va); vb = Number(vb); }
-        return (va > vb ? 1 : va < vb ? -1 : 0) * dir;
-      });
-
-      for (const w of filtered) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${w.segment}</td>
-          <td>${w.costCenter}</td>
-          <td>${w.equipment}</td>
-          <td>${w.machineName}</td>
-          <td>${w.status}</td>
-          <td>${w.ioPercent}%</td>
-          <td>
-            <div class="action-group">
-              <button class="btn secondary" data-action="assess" data-id="${w.id}" aria-label="Hodnotiť">Hodnotiť</button>
-              <button class="btn danger" data-action="delete" data-id="${w.id}" aria-label="Zmazať">Zmazať</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
+      function createEl(tag, attrs = {}, children = []) {
+        const el = document.createElement(tag);
+        Object.entries(attrs).forEach(([k, v]) => { if (k === 'class') el.className = v; else if (k === 'html') el.innerHTML = v; else el.setAttribute(k, v); });
+        children.forEach(ch => el.appendChild(ch));
+        return el;
+      }
+      function fmtDate(d) { if (!d) return ''; const dt = new Date(d); return dt.toLocaleDateString(); }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob); const a = document.createElement('a');
+        a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      }
+      function toCSV(rows, headers) {
+        const esc = (v) => {
+          if (v == null) return '';
+          const s = String(v);
+          if (s.includes('"') || s.includes(';') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+          return s;
+        };
+        const h = headers.join(';');
+        const body = rows.map(r => headers.map(h => esc(r[h])).join(';')).join('\n');
+        return h + '\n' + body;
       }
 
-      tbody.querySelectorAll('button[data-action="delete"]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (confirm('Naozaj chcete zmazať pracovisko vrátane hodnotení a úloh?')) {
+      async function refreshFilters() {
+        const workplaces = await DB.listWorkplaces();
+        const segments = Array.from(new Set(workplaces.map(w => w.segment))).sort();
+        const costCenters = Array.from(new Set(workplaces.map(w => w.costCenter))).sort();
+
+        const fillSelect = (sel, items) => {
+          sel.innerHTML = '<option value="">Všetko</option>';
+          items.forEach(i => { const opt = createEl('option', { value: i }); opt.textContent = i; sel.appendChild(opt); });
+        };
+
+        fillSelect(document.getElementById('filter-segment'), segments);
+        fillSelect(document.getElementById('filter-costcenter'), costCenters);
+        fillSelect(document.getElementById('filter-task-segment'), segments);
+        fillSelect(document.getElementById('filter-task-costcenter'), costCenters);
+      }
+
+      async function updateDashboard() {
+        const seg = document.getElementById('filter-segment').value || '';
+        const cc  = document.getElementById('filter-costcenter').value || '';
+
+        const workplaces = await DB.listWorkplaces();
+        const filteredWorkplaces = workplaces.filter(w => (!seg || w.segment === seg) && (!cc || w.costCenter === cc));
+
+        const assessments = [];
+        for (const w of filteredWorkplaces) assessments.push(await DB.getAssessment(w.id));
+
+        const totalWorkplaces = filteredWorkplaces.length;
+        const assessedWorkplaces = assessments.filter(a => a && a.statuses && Object.keys(a.statuses).length > 0).length;
+
+        let ioTotal = 0, nioTotal = 0;
+        const topicNioCounts = {}; TOPICS_LIST.forEach(t => topicNioCounts[t.key] = 0);
+
+        assessments.forEach(a => {
+          if (!a || !a.statuses) return;
+          Object.entries(a.statuses).forEach(([topicKey, val]) => {
+            if (val === 'IO') ioTotal++;
+            else if (val === 'NIO') { nioTotal++; topicNioCounts[topicKey] = (topicNioCounts[topicKey] || 0) + 1; }
+          });
+        });
+
+        const percentIO  = (ioTotal + nioTotal) > 0 ? Math.round((ioTotal / (ioTotal + nioTotal)) * 100) : 0;
+        const percentNIO = 100 - percentIO;
+
+        document.getElementById('stat-total-workplaces').textContent   = totalWorkplaces;
+        document.getElementById('stat-assessed-workplaces').textContent= assessedWorkplaces;
+        document.getElementById('stat-io-percent').textContent         = percentIO + '%';
+        document.getElementById('stat-nio-percent').textContent        = percentNIO + '%';
+
+        Charts.renderPie(ioTotal, nioTotal);
+        Charts.renderBar(topicNioCounts);
+      }
+
+      function bindWorkplaces() {
+        const form = document.getElementById('form-add-workplace');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const data = {
+            segment:    document.getElementById('wp-segment').value,
+            costCenter: document.getElementById('wp-costcenter').value,
+            equipment:  document.getElementById('wp-equipment').value,
+            machineName:document.getElementById('wp-machine').value
+          };
+          await DB.addWorkplace(data);
+          form.reset();
+          await loadWorkplacesTable();
+          await refreshFilters();
+          await fillAssessmentSelector();
+          updateDashboard();
+        });
+
+        // Live filters in the header filter row
+        ['f-segment','f-costcenter','f-equipment','f-machine'].forEach(id => {
+          document.getElementById(id).addEventListener('input', loadWorkplacesTable);
+        });
+        document.getElementById('f-status').addEventListener('change', loadWorkplacesTable);
+        document.getElementById('f-io-min').addEventListener('input', loadWorkplacesTable);
+
+        document.getElementById('search-workplaces').addEventListener('input', loadWorkplacesTable);
+        document.getElementById('btn-export-workplaces').addEventListener('click', exportWorkplacesCSV);
+
+        document.getElementById('btn-download-template').addEventListener('click', () => {
+          const csv = 'Segment;Nákladové stredisko;Equipment;Názov stroja\n';
+          downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'pracoviska_sablona.csv');
+        });
+        document.getElementById('btn-import').addEventListener('click', importWorkplaces);
+
+        document.querySelectorAll('.table thead .sortable').forEach(th => {
+          th.addEventListener('click', () => {
+            const key = th.getAttribute('data-sort');
+            if (key === sortKey) sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
+            else { sortKey = key; sortDir = 'asc'; }
+            updateSortIndicators();
+            loadWorkplacesTable();
+          });
+        });
+
+        loadWorkplacesTable();
+        updateSortIndicators();
+      }
+      function updateSortIndicators() {
+        document.querySelectorAll('.sort-indicator').forEach(el => {
+          const key = el.getAttribute('data-ind');
+          el.textContent = key === sortKey ? (sortDir === 'asc' ? '▲' : '▼') : '↕';
+        });
+      }
+
+      async function loadWorkplacesTable() {
+        const q   = (document.getElementById('search-workplaces').value||'').toLowerCase();
+        const fSeg= (document.getElementById('f-segment').value||'').toLowerCase();
+        const fCc = (document.getElementById('f-costcenter').value||'').toLowerCase();
+        const fEq = (document.getElementById('f-equipment').value||'').toLowerCase();
+        const fMa = (document.getElementById('f-machine').value||'').toLowerCase();
+        const fSt = document.getElementById('f-status').value||'';
+        const fIoMin = parseInt(document.getElementById('f-io-min').value, 10);
+
+        const tbody = document.getElementById('workplaces-tbody'); tbody.innerHTML = '';
+
+        const workplaces = await DB.listWorkplaces();
+        const data = [];
+        for (const w of workplaces) {
+          const assessment = await DB.getAssessment(w.id);
+          const percent = (() => {
+            if (!assessment || !assessment.statuses) return 0;
+            let io = 0, nio = 0;
+            Object.values(assessment.statuses).forEach(v => { if (v === 'IO') io++; else if (v === 'NIO') nio++; });
+            const tot = io + nio;
+            return tot > 0 ? Math.round((io / tot) * 100) : 0;
+          })();
+          data.push({ ...w, status: percent > 0 || (assessment && Object.keys(assessment.statuses || {}).length>0) ? 'Hodnotené' : 'Neohodnotené', ioPercent: percent });
+        }
+
+        const filtered = data.filter(w => {
+          const hay = `${w.segment} ${w.costCenter} ${w.equipment} ${w.machineName}`.toLowerCase();
+          if (q && !hay.includes(q)) return false;
+          if (fSeg && !String(w.segment).toLowerCase().includes(fSeg)) return false;
+          if (fCc && !String(w.costCenter).toLowerCase().includes(fCc)) return false;
+          if (fEq && !String(w.equipment).toLowerCase().includes(fEq)) return false;
+          if (fMa && !String(w.machineName).toLowerCase().includes(fMa)) return false;
+          if (fSt && w.status !== fSt) return false;
+          if (!isNaN(fIoMin) && w.ioPercent < fIoMin) return false;
+          return true;
+        });
+
+        const dir = sortDir === 'asc' ? 1 : -1;
+        filtered.sort((a,b) => {
+          let va = a[sortKey], vb = b[sortKey];
+          if (sortKey === 'ioPercent') { va = Number(va); vb = Number(vb); }
+          return (va > vb ? 1 : va < vb ? -1 : 0) * dir;
+        });
+
+        for (const w of filtered) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${w.segment}</td>
+            <td>${w.costCenter}</td>
+            <td>${w.equipment}</td>
+            <td>${w.machineName}</td>
+            <td>${w.status}</td>
+            <td>${w.ioPercent}%</td>
+            <td>
+              <div class="action-group">
+                <button class="btn secondary" data-action="assess" data-id="${w.id}">Hodnotiť</button>
+                <button class="btn danger" data-action="delete" data-id="${w.id}">Zmazať</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        tbody.querySelectorAll('button[data-action="delete"]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Naozaj chcete zmazať pracovisko vrátane hodnotení a úloh?')) return;
             await DB.deleteWorkplace(Number(btn.getAttribute('data-id')));
             await loadWorkplacesTable();
             await refreshFilters();
-            updateDashboard();
             await fillAssessmentSelector();
-          }
-        });
-      });
-      tbody.querySelectorAll('button[data-action="assess"]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          navigate('assessment');
-          await fillAssessmentSelector();
-          document.getElementById('assessment-workplace').value = btn.getAttribute('data-id');
-          document.getElementById('btn-start-assessment').click();
-        });
-      });
-    }
-
-    async function exportWorkplacesCSV() {
-      const ws = await DB.listWorkplaces();
-      const rows = ws.map(w => ({ Segment: w.segment, 'Nákladové stredisko': w.costCenter, Equipment: w.equipment, 'Názov stroja': w.machineName }));
-      downloadBlob(new Blob([toCSV(rows, ['Segment','Nákladové stredisko','Equipment','Názov stroja'])], {type:'text/csv;charset=utf-8;'}), 'pracoviska.csv');
-    }
-
-    async function importWorkplaces() {
-      const fileInput = document.getElementById('file-import'); const status = document.getElementById('import-status'); status.textContent = '';
-      const file = fileInput.files[0]; if (!file) { status.textContent = 'Najprv vyberte súbor.'; return; }
-      try {
-        let rows = [];
-        if (file.name.toLowerCase().endsWith('.csv')) {
-          const text = await file.text();
-          rows = parseCSV(text);
-        } else {
-          const data = new Uint8Array(await file.arrayBuffer());
-          const wb = XLSX.read(data, { type: 'array' });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-        }
-
-        if (!rows || rows.length === 0) { status.textContent = 'Súbor je prázdny alebo neobsahuje žiadne riadky.'; return; }
-
-        const first = rows[0].map(v => String(v || '').toLowerCase());
-        const looksHeader = first[0]?.includes('segment') && first[1]?.includes('náklad') && first[2]?.includes('equip') && first[3]?.includes('názov');
-        if (looksHeader) rows = rows.slice(1);
-
-        let imported = 0;
-        for (const r of rows) {
-          const segment = String(r[0] || '').trim();
-          const costCenter = String(r[1] || '').trim();
-          const equipment = String(r[2] || '').trim();
-          const machineName = String(r[3] || '').trim();
-          if (!segment && !costCenter && !equipment && !machineName) continue;
-          if (!segment || !costCenter || !equipment || !machineName) continue;
-          await DB.addWorkplace({ segment, costCenter, equipment, machineName });
-          imported++;
-        }
-
-        status.textContent = `Importovaných pracovísk: ${imported}`;
-        fileInput.value = '';
-        await loadWorkplacesTable();
-        await refreshFilters();
-        updateDashboard();
-        await fillAssessmentSelector();
-      } catch (err) {
-        console.error('Import error:', err);
-        status.textContent = `Chyba pri importe súboru: ${err?.message || err}`;
-      }
-    }
-
-    function bindAssessment() {
-      fillAssessmentSelector();
-      document.getElementById('btn-start-assessment').addEventListener('click', startAssessment);
-      document.getElementById('btn-clear-assessment').addEventListener('click', () => {
-        const form = document.getElementById('form-assessment');
-        form.reset();
-        document.getElementById('topics-container').innerHTML = '';
-        form.hidden = true;
-      });
-      document.getElementById('form-assessment').addEventListener('submit', saveAssessmentForm);
-    }
-
-    async function fillAssessmentSelector() {
-      const sel = document.getElementById('assessment-workplace');
-      const prev = sel.value;
-      sel.innerHTML = '<option value="">-- vyber --</option>';
-      const ws = await DB.listWorkplaces();
-      ws.forEach(w => {
-        const opt = createEl('option', { value: w.id });
-        opt.textContent = `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}`;
-        sel.appendChild(opt);
-      });
-      sel.value = prev || '';
-    }
-
-    async function startAssessment() {
-      const workplaceId = Number(document.getElementById('assessment-workplace').value);
-      if (!workplaceId) {
-        alert('Prosím vyberte pracovisko.');
-        return;
-      }
-      const assessment = await DB.getAssessment(workplaceId);
-      const statuses = assessment?.statuses || {};
-
-      const container = document.getElementById('topics-container');
-      container.innerHTML = '';
-      APP_TOPICS.forEach(t => {
-        const card = createTopicCard(t, statuses[t.key] || null, workplaceId);
-        container.appendChild(card);
-      });
-
-      document.getElementById('form-assessment').hidden = false;
-    }
-
-    function createTopicCard(topic, currentStatus, workplaceId) {
-      const card = createEl('div', { class: 'topic-card', 'data-topic': topic.key });
-
-      const header = createEl('div', { class: 'topic-header' });
-      const title = createEl('h3'); title.textContent = topic.name;
-      const badge = createEl('span', { class: 'badge ' + (currentStatus === 'NIO' ? 'nio' : currentStatus === 'IO' ? 'io' : ''), 'data-badge': '' });
-      badge.textContent = currentStatus || 'N/A';
-      header.appendChild(title);
-      header.appendChild(badge);
-
-      const body = createEl('div', { class: 'topic-body' });
-
-      const radiosWrap = createEl('div');
-      const ioId = `io-${topic.key}`;
-      const nioId = `nio-${topic.key}`;
-      const ioLabel = createEl('label', { for: ioId }); ioLabel.textContent = 'IO';
-      const ioRadio = createEl('input', { type: 'radio', name: `status-${topic.key}`, id: ioId, value: 'IO' });
-      const nioLabel = createEl('label', { for: nioId }); nioLabel.textContent = 'NIO';
-      const nioRadio = createEl('input', { type: 'radio', name: `status-${topic.key}`, id: nioId, value: 'NIO' });
-
-      if (currentStatus === 'IO') ioRadio.checked = true;
-      if (currentStatus === 'NIO') nioRadio.checked = true;
-
-      radiosWrap.appendChild(ioRadio); radiosWrap.appendChild(ioLabel);
-      radiosWrap.appendChild(nioRadio); radiosWrap.appendChild(nioLabel);
-
-      body.appendChild(radiosWrap);
-
-      const nioDetail = createEl('div', { class: 'nio-detail' });
-
-      const respLabel = createEl('label', { for: `resp-${topic.key}` }); respLabel.textContent = 'Zodpovedný';
-      const respInput = createEl('input', { id: `resp-${topic.key}`, type: 'text', placeholder: 'Meno priezvisko' });
-
-      const dueLabel = createEl('label', { for: `due-${topic.key}` }); dueLabel.textContent = 'Termín';
-      const dueInput = createEl('input', { id: `due-${topic.key}`, type: 'date' });
-
-      const fileLabel = createEl('label', { for: `file-${topic.key}` }); fileLabel.textContent = 'Fotky (max 5)';
-      const fileInput = createEl('input', { id: `file-${topic.key}`, type: 'file', accept: 'image/*', multiple: 'multiple', 'aria-label': `Pridať fotky pre ${topic.name}` });
-
-      const photosWrap = createEl('div', { class: 'photo-list', id: `photos-${topic.key}` });
-
-      nioDetail.appendChild(respLabel); nioDetail.appendChild(respInput);
-      nioDetail.appendChild(dueLabel); nioDetail.appendChild(dueInput);
-      nioDetail.appendChild(fileLabel); nioDetail.appendChild(fileInput);
-      nioDetail.appendChild(photosWrap);
-
-      body.appendChild(nioDetail);
-
-      const updateBadge = () => {
-        const st = ioRadio.checked ? 'IO' : (nioRadio.checked ? 'NIO' : 'N/A');
-        badge.textContent = st;
-        badge.className = 'badge ' + (st === 'NIO' ? 'nio' : st === 'IO' ? 'io' : '');
-        nioDetail.style.display = st === 'NIO' ? 'grid' : 'none';
-        nioDetail.style.gridTemplateColumns = '200px 1fr';
-        nioDetail.style.gap = '8px';
-      };
-      ioRadio.addEventListener('change', updateBadge);
-      nioRadio.addEventListener('change', updateBadge);
-      updateBadge();
-
-      loadExistingTaskData(workplaceId, topic.key, respInput, dueInput, photosWrap);
-
-      fileInput.addEventListener('change', async () => {
-        const files = Array.from(fileInput.files || []);
-        if (files.length > 5) {
-          alert('Maximálne 5 fotiek na tému.');
-          fileInput.value = '';
-          return;
-        }
-        photosWrap.innerHTML = '';
-        for (const f of files) {
-          const url = URL.createObjectURL(f);
-          const item = createEl('div', { class: 'photo-item' });
-          const img = createEl('img', { src: url, alt: `Nahraná fotka: ${f.name}` });
-          const name = createEl('span', {}, []);
-          name.textContent = f.name;
-          item.appendChild(img);
-          item.appendChild(name);
-          photosWrap.appendChild(item);
-        }
-      });
-
-      card.appendChild(header);
-      card.appendChild(body);
-
-      return card;
-    }
-
-    async function loadExistingTaskData(workplaceId, topicKey, respInput, dueInput, photosWrap) {
-      const tasks = await DB.listTasks();
-      const t = tasks.find(x => x.workplaceId === workplaceId && x.topicKey === topicKey);
-      if (!t) return;
-      respInput.value = t.responsible || '';
-      if (t.dueDate) {
-        const d = new Date(t.dueDate);
-        dueInput.value = d.toISOString().slice(0,10);
-      }
-      const photos = await DB.listPhotosByTask(t.id);
-      photosWrap.innerHTML = '';
-      for (const p of photos) {
-        const url = URL.createObjectURL(p.blob);
-        const item = createEl('div', { class: 'photo-item' });
-        const img = createEl('img', { src: url, alt: `Fotka k téme (${topicKey})` });
-        const name = createEl('span', {}, []); name.textContent = p.name;
-        item.appendChild(img); item.appendChild(name);
-        photosWrap.appendChild(item);
-      }
-    }
-
-    async function saveAssessmentForm(e) {
-      e.preventDefault();
-      const workplaceId = Number(document.getElementById('assessment-workplace').value);
-      if (!workplaceId) return;
-
-      const statuses = {};
-      const nioData = {};
-
-      for (const topic of APP_TOPICS) {
-        const stIO = document.getElementById(`io-${topic.key}`).checked;
-        const stNIO = document.getElementById(`nio-${topic.key}`).checked;
-        const st = stIO ? 'IO' : (stNIO ? 'NIO' : null);
-        if (st) statuses[topic.key] = st;
-        if (st === 'NIO') {
-          const responsible = document.getElementById(`resp-${topic.key}`).value.trim();
-          const dueDate = document.getElementById(`due-${topic.key}`).value ? new Date(document.getElementById(`due-${topic.key}`).value).getTime() : null;
-          const files = Array.from(document.getElementById(`file-${topic.key}`).files || []);
-          nioData[topic.key] = { responsible, dueDate, files };
-        }
-      }
-
-      await DB.saveAssessment(workplaceId, statuses);
-
-      const existingTasks = await DB.listTasks();
-      for (const[topicKey, info] of Object.entries(nioData)) {
-        let task = existingTasks.find(t => t.workplaceId === workplaceId && t.topicKey === topicKey);
-        let taskId;
-        if (!task) {
-          taskId = await DB.addTask({
-            workplaceId,
-            topicKey,
-            responsible: info.responsible,
-            dueDate: info.dueDate,
-            status: 'Otvorená'
+            updateDashboard();
           });
-        } else {
-          task.responsible = info.responsible;
-          task.dueDate = info.dueDate;
-          await DB.updateTask(task);
-          taskId = task.id;
-        }
-
-        const already = await DB.countPhotosForTask(taskId);
-        const canAdd = Math.max(0, 5 - already);
-        const toAdd = info.files.slice(0, canAdd);
-        for (const file of toAdd) {
-          await DB.addPhoto(taskId, workplaceId, topicKey, file);
-        }
+        });
+        tbody.querySelectorAll('button[data-action="assess"]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            navigate('assessment');
+            await fillAssessmentSelector();
+            document.getElementById('assessment-workplace').value = btn.getAttribute('data-id');
+            document.getElementById('btn-start-assessment').click();
+          });
+        });
       }
 
-      alert('Hodnotenie uložené.');
-      updateDashboard();
-      loadWorkplacesTable();
-    }
+      async function exportWorkplacesCSV() {
+        const ws = await DB.listWorkplaces();
+        const rows = ws.map(w => ({
+          Segment: w.segment,
+          'Nákladové stredisko': w.costCenter,
+          Equipment: w.equipment,
+          'Názov stroja': w.machineName
+        }));
+        const csv = toCSV(rows, ['Segment','Nákladové stredisko','Equipment','Názov stroja']);
+        downloadBlob(new Blob([csv], {type:'text/csv;charset=utf-8;'}), 'pracoviska.csv');
+      }
 
-    function bindTasks() {
-      loadTasksTable();
-
-      document.getElementById('filter-task-status').addEventListener('change', loadTasksTable);
-      document.getElementById('filter-task-segment').addEventListener('change', loadTasksTable);
-      document.getElementById('filter-task-costcenter').addEventListener('change', loadTasksTable);
-
-      document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
-    }
-
-    async function loadTasksTable() {
-      const tbody = document.getElementById('tasks-tbody');
-      tbody.innerHTML = '';
-
-      const status = document.getElementById('filter-task-status').value;
-      const seg = document.getElementById('filter-task-segment').value;
-      const cc = document.getElementById('filter-task-costcenter').value;
-
-      const tasks = await DB.listTasks({ status });
-      const workplaces = await DB.listWorkplaces();
-
-      const wpMap = new Map(workplaces.map(w =>[w.id, w]));
-
-      tasks
-        .filter(t => {
-          const w = wpMap.get(t.workplaceId);
-          if (!w) return false;
-          const okSeg = !seg || w.segment === seg;
-          const okCc = !cc || w.costCenter === cc;
-          return okSeg && okCc;
-        })
-        .sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0))
-        .forEach(async t => {
-          const w = wpMap.get(t.workplaceId);
-          const tr = document.createElement('tr');
-          const overdue = t.dueDate && t.status !== 'Splnená' && t.dueDate < Date.now();
-
-          tr.innerHTML = `
-            <td>${w ? `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}` : '-'}</td>
-            <td>${APP_TOPICS.find(x => x.key === t.topicKey)?.name || t.topicKey}</td>
-            <td>${t.responsible || '-'}</td>
-            <td>${fmtDate(t.dueDate)}</td>
-            <td>
-              <select data-action="set-status" data-id="${t.id}" aria-label="Zmeniť stav úlohy">
-                <option value="Otvorená" ${t.status==='Otvorená'?'selected':''}>Otvorená</option>
-                <option value="V riešení" ${t.status==='V riešení'?'selected':''}>V riešení</option>
-                <option value="Splnená" ${t.status==='Splnená'?'selected':''}>Splnená</option>
-              </select>
-              ${overdue ? '<span class="badge nio" title="Po termíne">Po termíne</span>' : ''}
-            </td>
-            <td>
-              <button class="btn secondary" data-action="show-photos" data-id="${t.id}">Zobraziť</button>
-              <input type="file" accept="image/*" multiple aria-label="Pridať fotky" data-action="add-photos" data-id="${t.id}" />
-            </td>
-            <td>
-              <button class="btn danger" data-action="delete-task" data-id="${t.id}">Zmazať</button>
-            </td>
-          `;
-
-          tbody.appendChild(tr);
-        });
-
-      // bind actions
-      tbody.querySelectorAll('select[data-action="set-status"]').forEach(sel => {
-        sel.addEventListener('change', async () => {
-          const id = Number(sel.getAttribute('data-id'));
-          const tasks = await DB.listTasks();
-          const t = tasks.find(x => x.id === id);
-          if (!t) return;
-          t.status = sel.value;
-          await DB.updateTask(t);
-          loadTasksTable();
-        });
-      });
-
-      tbody.querySelectorAll('button[data-action="show-photos"]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = Number(btn.getAttribute('data-id'));
-          const photos = await DB.listPhotosByTask(id);
-          const modalBody = document.getElementById('modal-body');
-          modalBody.innerHTML = '';
-          for (const p of photos) {
-            const url = URL.createObjectURL(p.blob);
-            const img = createEl('img', { src: url, alt: `Fotka úlohy ${p.name}` });
-            modalBody.appendChild(img);
-          }
-          openModal();
-        });
-      });
-
-      tbody.querySelectorAll('input[data-action="add-photos"]').forEach(input => {
-        input.addEventListener('change', async () => {
-          const id = Number(input.getAttribute('data-id'));
-          const already = await DB.countPhotosForTask(id);
-          const files = Array.from(input.files || []);
-          const canAdd = Math.max(0, 5 - already);
-          const toAdd = files.slice(0, canAdd);
-          for (const f of toAdd) await DB.addPhoto(id, null, null, f);
-          input.value = '';
-          loadTasksTable();
-        });
-      });
-
-      tbody.querySelectorAll('button[data-action="delete-task"]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('Zmazať úlohu?')) return;
-          const id = Number(btn.getAttribute('data-id'));
-          await DB.deleteTask(id);
-          loadTasksTable();
-        });
-      });
-    }
-
-    function openModal() {
-      const m = document.getElementById('modal');
-      m.setAttribute('aria-hidden', 'false');
-    }
-    function closeModal() {
-      const m = document.getElementById('modal');
-      m.setAttribute('aria-hidden', 'true');
-    }
-
-    function bindImportExport() {
-      document.getElementById('btn-export-json').addEventListener('click', async () => {
-        const data = await DB.exportJSON();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        downloadBlob(blob, 'bozp_export.json');
-      });
-
-      document.getElementById('btn-import-json').addEventListener('click', async () => {
-        const fileInput = document.getElementById('file-import-json');
-        const status = document.getElementById('json-import-status');
+      async function importWorkplaces() {
+        const fileInput = document.getElementById('file-import');
+        const status    = document.getElementById('import-status');
         status.textContent = '';
+
         const file = fileInput.files[0];
-        if (!file) { status.textContent = 'Vyberte JSON súbor.'; return; }
+        if (!file) { status.textContent = 'Najprv vyberte súbor.'; return; }
+
         try {
-          const text = await file.text();
-          const data = JSON.parse(text);
-          await DB.importJSON(data);
-          status.textContent = 'Import úspešný.';
+          let rows = [];
+          if (file.name.toLowerCase().endsWith('.csv')) {
+            const text = await file.text();
+            rows = text.split(/\r?\n/).map(line => line.split(';')).filter(r => r.length >= 4 && r.some(v => v && v.trim().length > 0));
+          } else {
+            const data = new Uint8Array(await file.arrayBuffer());
+            const wb = XLSX.read(data, { type: 'array' });
+            const wsName = wb.SheetNames[0];
+            const ws = wb.Sheets[wsName];
+            const arr = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+            rows = arr.filter(r => r.length >= 4 && r.some(v => v && String(v).trim().length > 0));
+          }
+          let imported = 0;
+          for (const r of rows) {
+            const segment    = String(r[0] || '').trim();
+            const costCenter = String(r[1] || '').trim();
+            const equipment  = String(r[2] || '').trim();
+            const machineName= String(r[3] || '').trim();
+            if (!segment || !costCenter || !equipment || !machineName) continue;
+            await DB.addWorkplace({ segment, costCenter, equipment, machineName });
+            imported++;
+          }
+          status.textContent = `Importovaných pracovísk: ${imported}`;
           fileInput.value = '';
           await loadWorkplacesTable();
           await refreshFilters();
+          await fillAssessmentSelector();
           updateDashboard();
-          loadTasksTable();
         } catch (err) {
           console.error(err);
-          status.textContent = 'Chybný JSON súbor.';
+          status.textContent = 'Chyba pri importe súboru.';
         }
-      });
-    }
+      }
 
-    /* GitHub Sync */
-    function bindGitHubSync() {
-      const ghOwner = document.getElementById('gh-owner');
-      const ghRepo  = document.getElementById('gh-repo');
-      const ghPath  = document.getElementById('gh-path');
-      const ghToken = document.getElementById('gh-token');
-      const ghStatus= document.getElementById('gh-status');
+      function bindAssessment() {
+        fillAssessmentSelector();
+        document.getElementById('btn-start-assessment').addEventListener('click', startAssessment);
+        document.getElementById('btn-clear-assessment').addEventListener('click', () => {
+          document.getElementById('form-assessment').reset();
+          document.getElementById('topics-container').innerHTML = '';
+          document.getElementById('form-assessment').hidden = true;
+        });
+        document.getElementById('form-assessment').addEventListener('submit', saveAssessmentForm);
+      }
 
-      document.getElementById('btn-gh-test').addEventListener('click', async () => {
-        ghStatus.textContent = 'Prebieha test pripojenia...';
-        try {
-          const res = await githubGetContent(ghOwner.value, ghRepo.value, ghPath.value, ghToken.value);
-          if (res && res.sha) ghStatus.textContent = 'Pripojenie OK, súbor existuje.';
-          else ghStatus.textContent = 'Pripojenie OK, súbor sa nenašiel (bude vytvorený pri nahrávaní).';
-        } catch (e) {
-          ghStatus.textContent = 'Chyba pripojenia: ' + (e.message || e);
+      async function fillAssessmentSelector() {
+        const sel = document.getElementById('assessment-workplace');
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">-- vyber --</option>';
+        const ws = await DB.listWorkplaces();
+        ws.forEach(w => {
+          const opt = createEl('option', { value: w.id });
+          opt.textContent = `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}`;
+          sel.appendChild(opt);
+        });
+        sel.value = prev || '';
+      }
+
+      async function startAssessment() {
+        const workplaceId = Number(document.getElementById('assessment-workplace').value);
+        if (!workplaceId) { alert('Prosím vyberte pracovisko.'); return; }
+        const assessment = await DB.getAssessment(workplaceId);
+        const statuses = assessment?.statuses || {};
+
+        const container = document.getElementById('topics-container');
+        container.innerHTML = '';
+        TOPICS_LIST.forEach(t => container.appendChild(createTopicCard(t, statuses[t.key] || null, workplaceId)));
+
+        document.getElementById('form-assessment').hidden = false;
+      }
+
+      function createTopicCard(topic, currentStatus, workplaceId) {
+        const card = createEl('div', { class: 'topic-card', 'data-topic': topic.key });
+
+        const header = createEl('div', { class: 'topic-header' });
+        const title  = createEl('h3'); title.textContent = topic.name;
+        const badge  = createEl('span', { class: 'badge ' + (currentStatus === 'NIO' ? 'nio' : currentStatus === 'IO' ? 'io' : ''), 'data-badge': '' });
+        badge.textContent = currentStatus || 'N/A';
+        header.appendChild(title); header.appendChild(badge);
+
+        const body = createEl('div', { class: 'topic-body' });
+
+        const radiosWrap = createEl('div', {});
+        const ioId  = `io-${topic.key}`,  nioId = `nio-${topic.key}`;
+        const ioLbl = createEl('label', { for: ioId });  ioLbl.textContent  = 'IO';
+        const io    = createEl('input', { type: 'radio', name: `status-${topic.key}`, id: ioId,  value: 'IO' });
+        const nioLbl= createEl('label', { for: nioId }); nioLbl.textContent = 'NIO';
+        const nio   = createEl('input', { type: 'radio', name: `status-${topic.key}`, id: nioId, value: 'NIO' });
+
+        if (currentStatus === 'IO') io.checked = true; if (currentStatus === 'NIO') nio.checked = true;
+
+        radiosWrap.append(io); radiosWrap.append(ioLbl); radiosWrap.append(nio); radiosWrap.append(nioLbl);
+        body.appendChild(radiosWrap);
+
+        const nioDetail = createEl('div', { class: 'nio-detail' });
+        const respLbl = createEl('label', { for: `resp-${topic.key}` }); respLbl.textContent = 'Zodpovedný';
+        const respInp = createEl('input', { id: `resp-${topic.key}`, type: 'text', placeholder: 'Meno priezvisko' });
+        const dueLbl = createEl('label', { for: `due-${topic.key}` }); dueLbl.textContent = 'Termín';
+        const dueInp = createEl('input', { id: `due-${topic.key}`, type: 'date' });
+        const fileLbl = createEl('label', { for: `file-${topic.key}` }); fileLbl.textContent = 'Fotky (max 5)';
+        const fileInp = createEl('input', { id: `file-${topic.key}`, type: 'file', accept: 'image/*', multiple: 'multiple' });
+        const photosWrap = createEl('div', { class: 'photo-list', id: `photos-${topic.key}` });
+
+      [respLbl, respInp, dueLbl, dueInp, fileLbl, fileInp, photosWrap].forEach(el => nioDetail.appendChild(el));
+        body.appendChild(nioDetail);
+
+        const updateBadge = () => {
+          const st = io.checked ? 'IO' : (nio.checked ? 'NIO' : 'N/A');
+          badge.textContent = st;
+          badge.className = 'badge ' + (st === 'NIO' ? 'nio' : st === 'IO' ? 'io' : '');
+          nioDetail.style.display = st === 'NIO' ? 'grid' : 'none';
+          nioDetail.style.gridTemplateColumns = '200px 1fr';
+          nioDetail.style.gap = '8px';
+        };
+        io.addEventListener('change', updateBadge);
+        nio.addEventListener('change', updateBadge);
+        updateBadge();
+
+        loadExistingTaskData(workplaceId, topic.key, respInp, dueInp, photosWrap);
+
+        fileInp.addEventListener('change', async () => {
+          const files = Array.from(fileInp.files || []);
+          if (files.length > 5) { alert('Maximálne 5 fotiek na tému.'); fileInp.value = ''; return; }
+          photosWrap.innerHTML = '';
+          for (const f of files) {
+            const url = URL.createObjectURL(f);
+            const item = createEl('div', { class: 'photo-item' });
+            const img  = createEl('img', { src: url, alt: `Nahraná fotka: ${f.name}` });
+            const name = createEl('span'); name.textContent = f.name;
+            item.appendChild(img); item.appendChild(name);
+            photosWrap.appendChild(item);
+          }
+        });
+
+        card.appendChild(header);
+        card.appendChild(body);
+        return card;
+      }
+
+      async function loadExistingTaskData(workplaceId, topicKey, respInput, dueInput, photosWrap) {
+        const tasks = await DB.listTasks();
+        const t = tasks.find(x => x.workplaceId === workplaceId && x.topicKey === topicKey);
+        if (!t) return;
+        respInput.value = t.responsible || '';
+        if (t.dueDate) { const d = new Date(t.dueDate); dueInput.value = d.toISOString().slice(0,10); }
+        const photos = await DB.listPhotosByTask(t.id);
+        photosWrap.innerHTML = '';
+        for (const p of photos) {
+          const url  = URL.createObjectURL(p.blob);
+          const item = createEl('div', { class: 'photo-item' });
+          const img  = createEl('img', { src: url, alt: `Fotka k téme (${topicKey})` });
+          const name = createEl('span'); name.textContent = p.name;
+          item.appendChild(img); item.appendChild(name);
+          photosWrap.appendChild(item);
         }
-      });
+      }
 
-      document.getElementById('btn-gh-download').addEventListener('click', async () => {
-        ghStatus.textContent = 'Sťahujem dáta z GitHub...';
-        try {
-          const res = await githubGetContent(ghOwner.value, ghRepo.value, ghPath.value, ghToken.value);
-          if (!res || !res.content) throw new Error('Súbor sa nenašiel.');
-          const text = decodeBase64(res.content);
-          const data = JSON.parse(text);
+      async function saveAssessmentForm(e) {
+        e.preventDefault();
+        const workplaceId = Number(document.getElementById('assessment-workplace').value);
+        if (!workplaceId) return;
+
+        const statuses = {};
+        const nioData = {};
+
+        for (const topic of TOPICS_LIST) {
+          const stIO = document.getElementById(`io-${topic.key}`).checked;
+          const stNIO = document.getElementById(`nio-${topic.key}`).checked;
+          const st = stIO ? 'IO' : (stNIO ? 'NIO' : null);
+          if (st) statuses[topic.key] = st;
+          if (st === 'NIO') {
+            const responsible = document.getElementById(`resp-${topic.key}`).value.trim();
+            const dueDate     = document.getElementById(`due-${topic.key}`).value ? new Date(document.getElementById(`due-${topic.key}`).value).getTime() : null;
+            const files       = Array.from(document.getElementById(`file-${topic.key}`).files || []);
+            nioData[topic.key] = { responsible, dueDate, files };
+          }
+        }
+
+        await DB.saveAssessment(workplaceId, statuses);
+
+        const existingTasks = await DB.listTasks();
+        for (const[topicKey, info] of Object.entries(nioData)) {
+          let task = existingTasks.find(t => t.workplaceId === workplaceId && t.topicKey === topicKey);
+          let taskId;
+          if (!task) {
+            taskId = await DB.addTask({ workplaceId, topicKey, responsible: info.responsible, dueDate: info.dueDate, status: 'Otvorená' });
+          } else {
+            task.responsible = info.responsible;
+            task.dueDate     = info.dueDate;
+            await DB.updateTask(task);
+            taskId = task.id;
+          }
+
+          const already = await DB.countPhotosForTask(taskId);
+          const canAdd  = Math.max(0, 5 - already);
+          for (const file of info.files.slice(0, canAdd)) await DB.addPhoto(taskId, workplaceId, topicKey, file);
+        }
+
+        alert('Hodnotenie uložené.');
+        updateDashboard();
+        loadWorkplacesTable();
+      }
+
+      function bindTasks() {
+        loadTasksTable();
+
+        document.getElementById('filter-task-status').addEventListener('change', loadTasksTable);
+        document.getElementById('filter-task-segment').addEventListener('change', loadTasksTable);
+        document.getElementById('filter-task-costcenter').addEventListener('change', loadTasksTable);
+        document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
+      }
+
+      async function loadTasksTable() {
+        const tbody = document.getElementById('tasks-tbody');
+        tbody.innerHTML = '';
+
+        const status = document.getElementById('filter-task-status').value;
+        const seg    = document.getElementById('filter-task-segment').value;
+        const cc     = document.getElementById('filter-task-costcenter').value;
+
+        const tasks      = await DB.listTasks({ status });
+        const workplaces = await DB.listWorkplaces();
+        const wpMap = new Map(workplaces.map(w =>[w.id, w]));
+
+        tasks
+          .filter(t => {
+            const w = wpMap.get(t.workplaceId);
+            if (!w) return false;
+            const okSeg = !seg || w.segment === seg;
+            const okCc  = !cc || w.costCenter === cc;
+            return okSeg && okCc;
+          })
+          .sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0))
+          .forEach(t => {
+            const w = wpMap.get(t.workplaceId);
+            const tr = document.createElement('tr');
+            const overdue = t.dueDate && t.status !== 'Splnená' && t.dueDate < Date.now();
+
+            tr.innerHTML = `
+              <td>${w ? `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}` : '-'}</td>
+              <td>${(TOPICS_LIST.find(x => x.key === t.topicKey)?.name) || t.topicKey}</td>
+              <td>${t.responsible || '-'}</td>
+              <td>${fmtDate(t.dueDate)}</td>
+              <td>
+                <select data-action="set-status" data-id="${t.id}">
+                  <option value="Otvorená" ${t.status==='Otvorená'?'selected':''}>Otvorená</option>
+                  <option value="V riešení" ${t.status==='V riešení'?'selected':''}>V riešení</option>
+                  <option value="Splnená" ${t.status==='Splnená'?'selected':''}>Splnená</option>
+                </select>
+                ${overdue ? '<span class="badge nio" title="Po termíne">Po termíne</span>' : ''}
+              </td>
+              <td>
+                <button class="btn secondary" data-action="show-photos" data-id="${t.id}">Zobraziť</button>
+                <input type="file" accept="image/*" multiple data-action="add-photos" data-id="${t.id}" />
+              </td>
+              <td><button class="btn danger" data-action="delete-task" data-id="${t.id}">Zmazať</button></td>
+            `;
+
+            tbody.appendChild(tr);
+          });
+
+        tbody.querySelectorAll('select[data-action="set-status"]').forEach(sel => {
+          sel.addEventListener('change', async () => {
+            const id = Number(sel.getAttribute('data-id'));
+            const tasks = await DB.listTasks();
+            const t = tasks.find(x => x.id === id);
+            if (!t) return;
+            t.status = sel.value;
+            await DB.updateTask(t);
+            loadTasksTable();
+          });
+        });
+
+        tbody.querySelectorAll('button[data-action="show-photos"]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = Number(btn.getAttribute('data-id'));
+            const photos = await DB.listPhotosByTask(id);
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = '';
+            for (const p of photos) {
+              const url = URL.createObjectURL(p.blob);
+              const img = createEl('img', { src: url, alt: `Fotka úlohy ${p.name}` });
+              modalBody.appendChild(img);
+            }
+            openModal();
+          });
+        });
+
+        tbody.querySelectorAll('input[data-action="add-photos"]').forEach(input => {
+          input.addEventListener('change', async () => {
+            const id = Number(input.getAttribute('data-id'));
+            const already = await DB.countPhotosForTask(id);
+            const files = Array.from(input.files || []);
+            for (const f of files.slice(0, Math.max(0, 5 - already))) await DB.addPhoto(id, null, null, f);
+            input.value = '';
+            loadTasksTable();
+          });
+        });
+
+        tbody.querySelectorAll('button[data-action="delete-task"]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Zmazať úlohu?')) return;
+            const id = Number(btn.getAttribute('data-id'));
+            await DB.deleteTask(id);
+            loadTasksTable();
+          });
+        });
+      }
+
+      async function exportTasksCSV(){
+        const tasks = await DB.listTasks();
+        const workplaces = await DB.listWorkplaces();
+        const wpMap = new Map(workplaces.map(w =>[w.id, w]));
+        const rows = [];
+        for (const t of tasks) {
+          const w = wpMap.get(t.workplaceId);
+          const photosCount = await DB.countPhotosForTask(t.id);
+          rows.push({
+            Pracovisko: w ? `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}` : '-',
+            Téma: (TOPICS_LIST.find(x => x.key === t.topicKey)?.name) || t.topicKey,
+            Zodpovedný: t.responsible || '',
+            Termín: fmtDate(t.dueDate),
+            Stav: t.status,
+            'Počet fotiek': photosCount
+          });
+        }
+        const csv = toCSV(rows, ['Pracovisko','Téma','Zodpovedný','Termín','Stav','Počet fotiek']);
+        downloadBlob(new Blob([csv], {type:'text/csv;charset=utf-8;'}), 'ulohy.csv');
+      }
+
+      function openModal() { document.getElementById('modal').setAttribute('aria-hidden','false'); }
+      function closeModal(){ document.getElementById('modal').setAttribute('aria-hidden','true'); }
+
+      function bindImportExport() {
+        document.getElementById('btn-export-json').addEventListener('click', async () => {
+          const data = await DB.exportJSON();
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          downloadBlob(blob, 'bozp_export.json');
+        });
+
+        document.getElementById('btn-import-json').addEventListener('click', async () => {
+          const fileInput = document.getElementById('file-import-json');
+          const status    = document.getElementById('json-import-status');
+          status.textContent = '';
+          const file = fileInput.files[0];
+          if (!file) { status.textContent = 'Vyberte JSON súbor.'; return; }
+          try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            await DB.importJSON(data);
+            status.textContent = 'Import úspešný.';
+            fileInput.value = '';
+            await loadWorkplacesTable();
+            await refreshFilters();
+            await fillAssessmentSelector();
+            updateDashboard();
+            loadTasksTable();
+          } catch (err) {
+            console.error(err);
+            status.textContent = 'Chybný JSON súbor.';
+          }
+        });
+      }
+
+      /* Cloud (Gist) */
+      function githubHeaders(hasJson=false){
+        const h = {
+          'Authorization': 'token '+(syncCreds?.token||''),
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        };
+        if (hasJson) h['Content-Type'] = 'application/json';
+        return h;
+      }
+      function githubHeadersWithToken(token, hasJson=false){
+        const h = {
+          'Authorization': 'token '+(token||''),
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        };
+        if (hasJson) h['Content-Type'] = 'application/json';
+        return h;
+      }
+      function updateRateFromHeaders(res){
+        const remain = res.headers.get('X-RateLimit-Remaining');
+        const reset  = res.headers.get('X-RateLimit-Reset');
+        rateLimit.remaining = remain!=null ? parseInt(remain,10) : null;
+        rateLimit.reset     = reset!=null ? parseInt(reset,10) : null;
+      }
+      function setCloudState(msg){ document.getElementById('cloudState').textContent = msg; }
+      function loadSyncCreds(){
+        try { syncCreds = JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); } catch { syncCreds = null; }
+        const idTxt = syncCreds?.gistId ? (syncCreds.gistId.slice(0,8)+'…') : '—';
+        setCloudState(syncCreds?.gistId ? `Pripojené (Gist ${idTxt})${syncCreds.auto?' • Auto':''}` : 'Odpojené');
+        document.getElementById('cloudAutoBtn').textContent = 'AutoSync: ' + (syncCreds?.auto ? 'ON' : 'OFF');
+      }
+      function saveSyncCreds(creds){
+        syncCreds = { gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), auto:!!creds.auto };
+        localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(syncCreds));
+        loadSyncCreds();
+      }
+      function clearSyncCreds(){ localStorage.removeItem(LS_SYNC_CREDS_KEY); syncCreds = null; loadSyncCreds(); }
+      function toggleCloudPopup(show=null){
+        const pop = document.getElementById('cloudPopup');
+        const isShown = !pop.hasAttribute('hidden');
+        const next = (show===null) ? !isShown : show;
+        if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
+        updateLockStateUI();
+      }
+      async function cloudCheckRate(){
+        if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
+        try{
+          const res = await fetch('https://api.github.com/rate_limit', { headers: githubHeaders(false) });
+          updateRateFromHeaders(res);
+          const j = await res.json();
+          const core = j?.resources?.core;
+          const resetTxt = core?.reset ? new Date(core.reset*1000).toLocaleString('sk-SK') : '—';
+          alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
+        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
+      }
+      async function githubGetGist(id){
+        const res = await fetch('https://api.github.com/gists/'+encodeURIComponent(id), { headers: githubHeaders(false) });
+        updateRateFromHeaders(res);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return res.json();
+      }
+      async function cloudLoad(){
+        if(!syncCreds?.gistId || !syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Načítavam…');
+          const j = await githubGetGist(syncCreds.gistId);
+          let file = j?.files?.[GIST_FILE_NAME];
+          if(!file){
+            alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`);
+            setCloudState('Odpojené (chýba súbor)');
+            return;
+          }
+          let contentStr = file.content;
+          if(!contentStr && file.raw_url){
+            const rawRes = await fetch(file.raw_url, { headers: { 'Accept':'application/vnd.github.v3.raw' } });
+            updateRateFromHeaders(rawRes);
+            contentStr = await rawRes.text();
+          }
+          const data = JSON.parse(contentStr);
           await DB.importJSON(data);
-          ghStatus.textContent = 'Import z GitHub úspešný.';
-          await loadWorkplacesTable();
+          setCloudState('Načítané');
           await refreshFilters();
+          await loadWorkplacesTable();
+          await fillAssessmentSelector();
           updateDashboard();
           loadTasksTable();
-        } catch (e) {
-          ghStatus.textContent = 'Chyba pri stiahnutí/importe: ' + (e.message || e);
-        }
-      });
-
-      document.getElementById('btn-gh-upload').addEventListener('click', async () => {
-        ghStatus.textContent = 'Nahrávam dáta na GitHub...';
-        try {
-          const data = await DB.exportJSON();
-          const text = JSON.stringify(data, null, 2);
-          const base64 = encodeBase64(text);
-
-          // zisti, či súbor existuje (kvôli SHA)
-          let existing = null;
-          try {
-            existing = await githubGetContent(ghOwner.value, ghRepo.value, ghPath.value, ghToken.value);
-          } catch (_) { /* ignore */ }
-
-          await githubPutContent(ghOwner.value, ghRepo.value, ghPath.value, ghToken.value, base64, existing?.sha);
-          ghStatus.textContent = 'Synchronizácia na GitHub prebehla úspešne.';
-        } catch (e) {
-          ghStatus.textContent = 'Chyba pri nahrávaní: ' + (e.message || e);
-        }
-      });
-    }
-
-    function ghHeaders(token) {
-      return {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': 'Bearer ' + token,
-        'X-GitHub-Api-Version': '2022-11-28'
-      };
-    }
-    async function githubGetContent(owner, repo, path, token) {
-      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-      const res = await fetch(url, { headers: ghHeaders(token) });
-      if (!res.ok) {
-        if (res.status === 404) return null;
-        throw new Error('HTTP ' + res.status);
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
       }
-      return res.json();
-    }
-    async function githubPutContent(owner, repo, path, token, base64Content, sha) {
-      const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-      const body = {
-        message: 'BOZP sync ' + new Date().toISOString(),
-        content: base64Content
-      };
-      if (sha) body.sha = sha;
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          ...ghHeaders(token),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    }
+      async function cloudSave(){
+        if(!syncCreds?.gistId || !syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Ukladám…');
+          const payload = await DB.exportJSON();
+          const body = { files: {[GIST_FILE_NAME]: { content: JSON.stringify(payload, null, 2) } } };
+          const res = await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{
+            method:'PATCH', headers: githubHeaders(true), body: JSON.stringify(body)
+          });
+          updateRateFromHeaders(res);
+          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
+          setCloudState('Uložené');
+        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
+      }
+      function syncMaybeUpload(){
+        if(!syncCreds?.auto || syncBusy) return;
+        if(syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(async()=>{
+          syncTimer=null; syncBusy=true;
+          try{ await cloudSave(); } finally { syncBusy=false; }
+        }, syncBackoffMs);
+      }
 
-    // Base64 helpers (UTF-8 safe)
-    function encodeBase64(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
-    function decodeBase64(b64) {
-      return decodeURIComponent(escape(atob(b64)));
-    }
+      function bindCloudUI(){
+        const cloudBtn  = document.getElementById('cloudBtn');
+        const cloudOverlay = document.getElementById('cloudOverlay');
+        const cloudClose   = document.getElementById('cloudClose');
+        const cloudGistIdInput = document.getElementById('cloudGistId');
+        const cloudTokenInput  = document.getElementById('cloudToken');
+        const cloudSaveCreds   = document.getElementById('cloudSaveCreds');
+        const cloudCreateGist  = document.getElementById('cloudCreateGist');
+        const cloudErrorEl     = document.getElementById('cloudError');
+        const cloudNoteEl      = document.getElementById('cloudNote');
+
+        function showCloudError(msg){ cloudErrorEl.textContent = msg; cloudErrorEl.classList.add('show'); }
+        function clearCloudError(){ cloudErrorEl.textContent=''; cloudErrorEl.classList.remove('show'); }
+
+        cloudBtn.addEventListener('click', () => toggleCloudPopup());
+        document.addEventListener('click',(e)=>{ const pop=document.getElementById('cloudPopup'); if(!pop.hasAttribute('hidden')){ if(!e.target.closest('#cloudPopup') && !e.target.closest('#cloudBtn')) toggleCloudPopup(false); }});
+
+        document.getElementById('cloudSettingsBtn').addEventListener('click', () => {
+          clearCloudError(); cloudNoteEl.textContent='';
+          const c = syncCreds || {};
+          cloudGistIdInput.value = c.gistId || '';
+          cloudTokenInput.value  = c.token || '';
+          cloudOverlay.setAttribute('aria-hidden','false');
+        });
+        cloudClose.addEventListener('click', () => cloudOverlay.setAttribute('aria-hidden','true'));
+        cloudOverlay.addEventListener('click', (e) => { if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
+
+        cloudSaveCreds.addEventListener('click', () => {
+          const id = cloudGistIdInput.value.trim(), tk = cloudTokenInput.value.trim();
+          if(!tk){ showCloudError('Vyžaduje sa token (scope: gist).'); return; }
+          saveSyncCreds({ gistId:id, token:tk, auto: syncCreds?.auto||false });
+          alert('Cloud: nastavenia uložené.');
+          cloudOverlay.setAttribute('aria-hidden','true');
+        });
+
+        cloudCreateGist.addEventListener('click', async() => {
+          const tk = cloudTokenInput.value.trim() || syncCreds?.token || '';
+          if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
+          try{
+            const payloadStr = JSON.stringify({version:1, note:'Inicializácia BOZP App'}, null, 2);
+            const res = await fetch('https://api.github.com/gists', {
+              method:'POST', headers: githubHeadersWithToken(tk,true),
+              body: JSON.stringify({ description:'BOZP Workspace', public:false, files:{[GIST_FILE_NAME]: { content: payloadStr } } })
+            });
+            updateRateFromHeaders(res);
+            if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
+            const j = await res.json();
+            cloudGistIdInput.value = j?.id || '';
+            cloudNoteEl.textContent = 'Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
+          }catch(err){ showCloudError(err.message); }
+        });
+
+        document.getElementById('cloudLoadBtn').addEventListener('click', cloudLoad);
+        document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
+        document.getElementById('cloudAutoBtn').addEventListener('click', () => {
+          const c = syncCreds || { gistId:'', token:'', auto:false };
+          c.auto = !c.auto; saveSyncCreds(c);
+        });
+        document.getElementById('cloudSignOutBtn').addEventListener('click', () => { if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
+        document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
+
+        document.getElementById('unlockBtn').addEventListener('click', unlockWithPassword);
+        document.getElementById('unlockPass').addEventListener('keydown', (e) => { if(e.key==='Enter'){ e.preventDefault(); unlockWithPassword(); }});
+        document.getElementById('lockBtn').addEventListener('click', lockUI);
+      }
+
+      function updateLockStateUI(){
+        const lockState = document.getElementById('lockState');
+        lockState.textContent = document.body.classList.contains('authed') ? 'Odomknuté' : 'Zamknuté';
+        const errEl = document.getElementById('unlockError'); errEl.classList.remove('show'); errEl.textContent='';
+      }
+      function applyAuthFromStorage(){
+        const unlocked = localStorage.getItem(LS_AUTH_KEY)==='1';
+        document.body.classList.toggle('authed', !!unlocked);
+        updateLockStateUI();
+      }
+      function unlockWithPassword(){
+        const pw = (document.getElementById('unlockPass').value||'').trim();
+        if(pw===AUTH_PASSWORD){
+          localStorage.setItem(LS_AUTH_KEY,'1');
+          applyAuthFromStorage();
+          document.getElementById('unlockPass').value='';
+        }else{
+          const errEl = document.getElementById('unlockError'); errEl.textContent='Nesprávne heslo.'; errEl.classList.add('show');
+        }
+      }
+      function lockUI(){
+        localStorage.removeItem(LS_AUTH_KEY);
+        applyAuthFromStorage();
+        closeModal();
+      }
+    })();
   </script>
 </body>
 </html>
-```
-=== index.html KONIEC ===
-[CAST 1/1 KONIEC]
