@@ -476,13 +476,14 @@
     (function(){
       const DB_NAME = 'bozpAppDB';
       const DB_VERSION = 1;
+      const LS_REMOTE_UPDATED_AT = 'bozpApp/remoteUpdatedAt';
 
       let useMemory = false;
       const mem = {
         workplaces: [],
         assessments: new Map(),
         tasks: [],
-        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
+        photos: [],
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -643,7 +644,9 @@
             name: p.name, type: p.type, size: p.size, createdAt: p.createdAt,
             remoteUrl: p.remoteUrl || null
           }));
-          return { version: 2, workplaces, tasks, assessments, photos: photosLight };
+          // Meta pre "konflikt" kontrolu
+          const meta = { version: 3, updatedAt: Date.now() };
+          return { meta, workplaces, tasks, assessments, photos: photosLight };
         },
 
         async importJSON(data){
@@ -661,6 +664,7 @@
             mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id))||0)+1;
             mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id))||0)+1;
             mem.ids.photo = (Math.max(0, ...mem.photos.map(p=>p.id))||0)+1;
+            try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
             return;
           }
 
@@ -683,6 +687,7 @@
               await put(pS, { id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null });
             }
           }
+          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
         }
       };
     })();
@@ -755,7 +760,7 @@
     })();
   </script>
 
-  <!-- Main logic with AutoSync + Tasks refresh after photo upload -->
+  <!-- Main logic with AutoSync + Save conflict guard -->
   <script>
     (function(){
       const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
@@ -767,6 +772,7 @@
       const AUTH_PASSWORD = '31104986';
       const LS_AUTH_KEY  = 'bozpApp/authed';
       const LS_SYNC_CREDS_KEY = 'bozpApp/cloudCreds';
+      const LS_REMOTE_UPDATED_AT = 'bozpApp/remoteUpdatedAt';
       const GIST_FILE_NAME = 'bozp_export.json';
 
       let syncCreds = null;   // { gistId, token, auto, repoOwner, repoName, repoBranch, repoFolder }
@@ -818,7 +824,7 @@
         ROUTES.forEach(r => {
           const v = document.getElementById(`view-${r}`);
           const l = document.querySelector(`.nav-link[data-route="${r}"]`);
-        if (v) {
+          if (v) {
             const active = r === route;
             v.hidden = !active;
             if (l) { if (active) l.setAttribute('aria-current','page'); else l.removeAttribute('aria-current'); }
@@ -1374,6 +1380,7 @@
             const id = Number(btn.getAttribute('data-id'));
             await DB.deleteTask(id);
             loadTasksTable();
+            // Ak máš AutoSync na tomto zariadení, JSON sa uloží automaticky; inak klikni Cloud → Uložiť
           });
         });
       }
@@ -1433,7 +1440,7 @@
         });
       }
 
-      /* Cloud (Gist + GitHub repo photos) */
+      /* Cloud (Gist + GitHub repo photos) s kontrolou konfliktov pri uložen í */
       function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_') ? 'Bearer ' : 'token ') + t; }
       function githubHeaders(hasJson=false){
         const h = {
@@ -1524,6 +1531,7 @@
           }
           const data = JSON.parse(contentStr);
           await DB.importJSON(data);
+          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
           setCloudState('Načítané');
           await refreshFilters();
           await loadWorkplacesTable();
@@ -1535,14 +1543,41 @@
       async function cloudSave(){
         if(!syncCreds?.gistId || !syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
         try{
+          // Najprv zisti, či na Giste nie sú novšie dáta (ochrana pred prepísaním iného zariadenia)
+          let remoteUpdatedAt = 0;
+          try{
+            const j = await githubGetGist(syncCreds.gistId);
+            const file = j?.files?.[GIST_FILE_NAME];
+            if (file) {
+              let contentStr = file.content;
+              if(!contentStr && file.raw_url){
+                const rawRes = await fetch(file.raw_url, { headers: { 'Accept':'application/vnd.github.v3.raw' } });
+                updateRateFromHeaders(rawRes);
+                contentStr = await rawRes.text();
+              }
+              const remote = contentStr ? JSON.parse(contentStr) : null;
+              remoteUpdatedAt = remote?.meta?.updatedAt || 0;
+            }
+          }catch(e){ /* ignoruj */ }
+
+          const lastLoadedAt = Number(localStorage.getItem(LS_REMOTE_UPDATED_AT) || '0');
+          if (remoteUpdatedAt > lastLoadedAt) {
+            const proceed = confirm('V Giste sú novšie dáta z iného zariadenia. Najprv klikni „Načítať“, aby sa dáta zosynchronizovali. Pokračovať aj tak a prepísať ich?');
+            if (!proceed) { setCloudState('Zrušené'); return; }
+          }
+
           setCloudState('Ukladám…');
           const payload = await DB.exportJSON();
+          const now = Date.now();
+          payload.meta = payload.meta || {};
+          payload.meta.updatedAt = now;
           const body = { files: {[GIST_FILE_NAME]: { content: JSON.stringify(payload, null, 2) } } };
           const res = await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{
             method:'PATCH', headers: githubHeaders(true), body: JSON.stringify(body)
           });
           updateRateFromHeaders(res);
           if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
+          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(now)); } catch {}
           setCloudState('Uložené');
         }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
@@ -1610,9 +1645,7 @@
           const remoteUrl = `https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
           p.remoteUrl = remoteUrl; p.remoteSha = res.content.sha || null; p.uploadedAt = Date.now();
           await DB.updatePhoto(p);
-          // AutoSync JSON po uploade (ak je zapnutý)
           try { syncMaybeUpload(); } catch(e) {}
-          // Refresh Úloh ak je zobrazený pohľad
           try { const tasksViewVisible = !document.getElementById('view-tasks').hidden; if (tasksViewVisible) await loadTasksTable(); } catch(e) {}
         } catch (err) {
           console.warn('Upload fotky zlyhal:', err?.message||err);
@@ -1629,7 +1662,6 @@
           try { await tryUploadPhoto(p.id); ok++; } catch { fail++; }
         }
         alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
-        // AutoSync JSON po hromadnom uploade
         try { syncMaybeUpload(); } catch(e) {}
       }
 
@@ -1688,7 +1720,7 @@
           const tk = cloudTokenInput.value.trim() || syncCreds?.token || '';
           if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
           try{
-            const payloadStr = JSON.stringify({version:2, note:'Inicializácia BOZP App'}, null, 2);
+            const payloadStr = JSON.stringify({version:3, note:'Inicializácia BOZP App'}, null, 2);
             const res = await fetch('https://api.github.com/gists', {
               method:'POST', headers: githubHeadersWithToken(tk,true),
               body: JSON.stringify({ description:'BOZP Workspace', public:false, files:{[GIST_FILE_NAME]: { content: payloadStr } } })
