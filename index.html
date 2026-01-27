@@ -763,6 +763,7 @@
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
+
   <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
@@ -969,7 +970,7 @@
           return true;
         });
 
-        const dir = sortDir===('asc') ? 1 : -1;
+        const dir = sortDir==='asc' ? 1 : -1;
         filtered.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='ioPercent'){va=Number(va);vb=Number(vb);} return (va>vb?1:va<vb?-1:0)*dir; });
 
         for (const w of filtered){
@@ -1010,7 +1011,7 @@
             document.getElementById('btn-start-assessment').click();
           });
         });
-        // NOVÉ: Zrušiť hodnotenie (anuluje IO/NIO, zmaže úlohy a fotky pre dané pracovisko)
+        // Zrušiť hodnotenie (anuluje IO/NIO, zmaže úlohy a fotky pre dané pracovisko)
         tbody.querySelectorAll('button[data-action="cancel"]').forEach(btn=>{
           btn.addEventListener('click', async ()=>{
             if(!confirm('Zrušiť hodnotenie pre toto pracovisko? Zmažú sa aj všetky úlohy a fotky pre dané pracovisko.')) return;
@@ -1039,7 +1040,7 @@
           let rows=[];
           if(file.name.toLowerCase().endsWith('.csv')){
             const text=await file.text();
-            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v a&& v.trim().length>0));
+            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v && v.trim().length>0));
           }else{
             const data=new Uint8Array(await file.arrayBuffer());
             const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
@@ -1111,7 +1112,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1184,10 +1185,8 @@
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.');
-
         // návrat na Pracoviská po uložení
         navigate('workplaces');
-
         updateDashboard(); loadWorkplacesTable();
       }
 
@@ -1382,7 +1381,7 @@
         const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,'')); // trim a encode
         const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
         const res=await fetch(url,{headers:githubHeaders(false)});
-        if(res.status===404) return []; // neexistuje priečinok
+        if(res.status===404) return []; // neexistuje priečinok/súbor
         if(!res.ok) throw new Error('Get contents: HTTP '+res.status);
         const j=await res.json();
         return Array.isArray(j)?j:[j];
