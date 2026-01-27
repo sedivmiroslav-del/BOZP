@@ -141,6 +141,26 @@
     .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
     .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
 
+    /* Modál fotiek – menšie náhľady */
+    .modal[aria-hidden="true"]{display:none}
+    .modal[aria-hidden="false"]{
+      position:fixed; inset:0; background:rgba(0,0,0,.35);
+      display:flex; align-items:center; justify-content:center; z-index:1000;
+    }
+    .modal-content{
+      width:min(800px,95vw); background:#fff; border:2px solid var(--light-gray);
+      border-radius:10px; box-shadow:var(--shadow); overflow:hidden;
+    }
+    .modal-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; background:rgb(206,213,218); border-bottom:1px solid var(--light-gray);
+    }
+    .modal-body{ padding:12px; display:flex; flex-wrap:wrap; gap:8px; }
+    .modal-body img{
+      width:120px; height:90px; object-fit:cover;
+      border:1px solid var(--light-gray); border-radius:8px;
+    }
+
     @media (max-width: 980px) {
       .cards { grid-template-columns: repeat(2, 1fr); }
       .grid-2 { grid-template-columns: 1fr; }
@@ -731,6 +751,7 @@
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
+
   <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
@@ -1064,7 +1085,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1136,7 +1157,12 @@
         // po uložení údajov do DB ihneď uložíme JSON do Gist (ak sú kredencialy)
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
-        alert('Hodnotenie uložené.'); updateDashboard(); loadWorkplacesTable();
+        alert('Hodnotenie uložené.');
+
+        // NOVÉ: návrat na Pracoviská po uložení
+        navigate('workplaces');
+
+        updateDashboard(); loadWorkplacesTable();
       }
 
       function bindTasks(){
@@ -1195,7 +1221,11 @@
             const id=Number(btn.getAttribute('data-id'));
             const photos=await DB.listPhotosByTask(id);
             const modalBody=document.getElementById('modal-body'); modalBody.innerHTML='';
-            for(const p of photos){ const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : ''); if(!src) continue; const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img); }
+            for(const p of photos){
+              const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
+              if(!src) continue;
+              const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img);
+            }
             openModal();
           });
         });
