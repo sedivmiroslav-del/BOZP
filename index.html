@@ -741,20 +741,48 @@
   <script>
     (function(){
       const CHART_TOPICS = [
-        {key:'ovladacie_panely', name:'ovládacie panely'},
-        {key:'suporty', name:'suporty'},
-        {key:'koncove_spinace', name:'koncové spínače'},
-        {key:'zlaby_listy', name:'žľaby, lišty'},
-        {key:'zaseknute_diely', name:'zaseknuté diely'},
-        {key:'zakonne_skolenia_podnikove', name:'zákonné školenia podnikové'},
-        {key:'matica_kvalifikacie', name:'matica kvalifikácie'},
-        {key:'skoliace_materialy_nnos', name:'školiace materiály (NnOS)'},
-        {key:'postupy_pretypovania', name:'postupy pretypovania'},
-        {key:'cistiace_inspekcne_plany', name:'čistiace a inšpekčné plány'},
-        {key:'analyza_rizik', name:'analýza rizík'},
-        {key:'kontrolne_mechanizmy', name:'kontrolné mechanizmy'},
-        {key:'revizia_pracoviska_ce', name:'revízia pracoviska (CE)'},
-        {key:'prebierka_stroja', name:'prebierka stroja'}
+        {key:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy 
+', name:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy 
+'},
+        {key:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby 
+(stlačením tlačidla dochádza k pohybu na doraz)', name:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby 
+(stlačením tlačidla dochádza k pohybu na doraz)'},
+        {key:'Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené', name:'Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené'},
+        {key:'Žľaby, lišty, výstupné pásy sú nevhodne konštruované
+Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“ 
+', name:'Žľaby, lišty, výstupné pásy sú nevhodne konštruované
+Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“ 
+'},
+        {key:'Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)    
+', name:'Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)    
+'},
+        {key:'Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)
+', name:'Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)
+'},
+        {key:'Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané 
+', name:'Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané 
+'},
+        {key:'Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických) 
+', name:'Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických) 
+'},
+        {key:'Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania 
+', name:'Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania 
+'},
+        {key:'Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaná správny postup kontroly bezpečnostných koncových spínačov
+', name:'Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaná správny postup kontroly bezpečnostných koncových spínačov
+'},
+        {key:'Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách  
+', name:'Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách  
+'},
+        {key:'Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce) 
+', name:'Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce) 
+'},
+        {key:'Neodbornými zásahmi (PDCA, IF..)  do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE) 
+', name:'Neodbornými zásahmi (PDCA, IF..)  do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE) 
+'},
+        {key:'Dochádza k produkovaniu na strojoch ktoré nemajú vykonanú prebierku stroja 
+', name:'Dochádza k produkovaniu na strojoch ktoré nemajú vykonanú prebierku stroja 
+'}
       ];
       let chartPie=null, chartBar=null;
 
@@ -1584,3 +1612,4 @@
   </script>
 </body>
 </html>
+
