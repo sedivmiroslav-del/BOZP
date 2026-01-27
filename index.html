@@ -53,7 +53,7 @@
     .app-nav a { color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; }
     .app-nav a:hover, .app-nav a[aria-current="page"] { background: rgba(255,255,255,0.2); }
 
-    /* Cloud akcie v hornej lište */
+    /* Cloud akcie v hornej lište – už iba Obnoviť */
     .header-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .header-actions .btn { background:#fff; color:#000; border:1px solid var(--light-gray); }
     .header-actions .btn:hover { background: rgb(246,251,253); }
@@ -129,8 +129,6 @@
     .smallNote{color:#555;font-size:12px}
     .cloudError{color:#b00020;background:#fdecee;border:1px solid #f5c2c7;border-radius:8px;padding:8px 10px;display:none}
     .cloudError.show{display:block}
-    .requires-auth{ display:none !important; }
-    body.authed .requires-auth{ display:inline-flex !important; }
 
     .cloudOverlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:1000}
     .cloudOverlay[aria-hidden="false"]{display:flex}
@@ -166,12 +164,9 @@
         <li><a href="#" data-route="tasks" class="nav-link">Úlohy</a></li>
         <li><a href="#" data-route="importExport" class="nav-link">Import/Export</a></li>
       </ul>
-      <!-- NOVÉ: Cloud tlačidlá hore -->
+      <!-- NOVÉ: Horné tlačidlo Obnoviť -->
       <div class="header-actions" aria-label="Cloud akcie">
-        <button id="cloudLoadBtnTop"   class="btn requires-auth" type="button" title="Načítať dáta z Gistu">Načítať</button>
-        <button id="cloudSaveBtnTop"   class="btn requires-auth" type="button" title="Uložiť dáta do Gistu">Uložiť</button>
-        <button id="cloudUploadBtnTop" class="btn requires-auth" type="button" title="Dohrať lokálne fotky do GitHub repozitára">Upload fotiek</button>
-        <button id="cloudAutoBtnTop"   class="btn requires-auth" type="button" title="Prepína AutoSync JSON do Gistu">AutoSync: OFF</button>
+        <button id="cloudRefreshBtnTop" class="btn" type="button" title="Načítať dáta z Gistu + dohrať fotky z repo">Obnoviť</button>
       </div>
     </nav>
   </header>
@@ -389,25 +384,14 @@
               <span class="lbl">Stav</span>
               <span id="cloudState" class="val">Odpojené</span>
             </div>
-            <div class="cloudRow">
-              <span class="lbl">Prístup</span>
-              <span id="lockState" class="val" aria-live="polite">Zamknuté</span>
-            </div>
-            <div class="cloudActions" aria-label="Odomknutie">
-              <input id="unlockPass" type="password" aria-label="Heslo" placeholder="Heslo" />
-              <button id="unlockBtn" class="cloudBtn" type="button">Odomknúť</button>
-              <button id="lockBtn" class="cloudBtn requires-auth" type="button">Zamknúť</button>
-            </div>
-            <div id="unlockError" class="cloudError" role="alert" aria-live="assertive"></div>
 
             <div class="cloudActions" style="margin-top:6px">
               <button id="cloudSettingsBtn" class="cloudBtn" type="button">Nastaviť ID + Token + Repo</button>
-              <button id="cloudLoadBtn" class="cloudBtn requires-auth" type="button">Načítať</button>
-              <button id="cloudSaveBtn" class="cloudBtn requires-auth" type="button">Uložiť</button>
-              <button id="cloudAutoBtn" class="cloudBtn requires-auth" type="button" title="Auto nahrávanie JSONu po zmenách">AutoSync: OFF</button>
-              <button id="cloudUploadPhotosBtn" class="cloudBtn requires-auth" type="button" title="Dohrať chýbajúce fotky do repozitára">Upload fotiek</button>
-              <button id="cloudCheckBtn" class="cloudBtn requires-auth" type="button" title="Skontrolovať API limity">Limit</button>
-              <button id="cloudSignOutBtn" class="cloudBtn requires-auth" type="button">Odhlásiť</button>
+              <button id="cloudLoadBtn" class="cloudBtn" type="button">Obnoviť</button>
+              <button id="cloudSaveBtn" class="cloudBtn" type="button">Uložiť</button>
+              <button id="cloudUploadPhotosBtn" class="cloudBtn" type="button" title="Dohrať chýbajúce fotky do repozitára">Upload fotiek</button>
+              <button id="cloudCheckBtn" class="cloudBtn" type="button" title="Skontrolovať API limity">Limit</button>
+              <button id="cloudSignOutBtn" class="cloudBtn" type="button">Odhlásiť</button>
             </div>
             <div class="smallNote">JSON: GitHub Gist (súkromný). Súbor: <code>bozp_export.json</code>. Token: scope <b>gist</b>.<br>
             Fotky: GitHub repo cez Contents API. Token: scope <b>public_repo</b> (public) alebo <b>repo</b> (private).</div>
@@ -468,7 +452,7 @@
         </div>
         <div class="cloudActions">
           <button id="cloudSaveCreds" class="btn primary" type="button">Uložiť nastavenia</button>
-          <button id="cloudCreateGist" class="btn secondary requires-auth" type="button" title="Vytvorí súkromný gist s prázdnym JSONom">Vytvoriť nový Gist</button>
+          <button id="cloudCreateGist" class="btn secondary" type="button" title="Vytvorí súkromný gist s prázdnym JSONom">Vytvoriť nový Gist</button>
         </div>
         <div id="cloudError" class="cloudError"></div>
         <div id="cloudNote" class="smallNote"></div>
@@ -747,7 +731,6 @@
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
-
   <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
@@ -757,15 +740,12 @@
       let sortKey = 'segment';
       let sortDir = 'asc';
 
-      const AUTH_PASSWORD = '31104986';
-      const LS_AUTH_KEY  = 'bozpApp/authed';
       const LS_SYNC_CREDS_KEY = 'bozpApp/cloudCreds';
       const LS_REMOTE_UPDATED_AT = 'bozpApp/remoteUpdatedAt';
       const GIST_FILE_NAME = 'bozp_export.json';
 
       let syncCreds = null;
       let rateLimit = { remaining:null, reset:null };
-      let syncTimer = null, syncBusy=false, syncBackoffMs=8000;
 
       document.addEventListener('DOMContentLoaded', init);
 
@@ -798,7 +778,6 @@
 
         bindCloudUI();
         loadSyncCreds();
-        applyAuthFromStorage();
       }
 
       function initRouting(){
@@ -958,7 +937,7 @@
           return true;
         });
 
-        const dir = sortDir==='asc' ? 1 : -1;
+        const dir = sortDir===('asc') ? 1 : -1;
         filtered.sort((a,b)=>{ let va=a[sortKey], vb=b[sortKey]; if(sortKey==='ioPercent'){va=Number(va);vb=Number(vb);} return (va>vb?1:va<vb?-1:0)*dir; });
 
         for (const w of filtered){
@@ -1150,9 +1129,12 @@
           const canAdd=Math.max(0, 5-already);
           for(const file of info.files.slice(0, canAdd)){
             const pid=await DB.addPhoto(taskId, workplaceId, topicKey, file);
-            await tryUploadPhoto(pid);
+            await tryUploadPhoto(pid); // automaticky upload do repo
           }
         }
+
+        // po uložení údajov do DB ihneď uložíme JSON do Gist (ak sú kredencialy)
+        try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.'); updateDashboard(); loadWorkplacesTable();
       }
@@ -1225,9 +1207,12 @@
             const files=Array.from(input.files||[]);
             for(const f of files.slice(0, Math.max(0,5-already))){
               const pid=await DB.addPhoto(id, null, null, f);
-              await tryUploadPhoto(pid);
+              await tryUploadPhoto(pid); // automaticky upload do repo
             }
             input.value=''; loadTasksTable();
+
+            // po pridaní fotiek rovno uložíme JSON do Gist
+            try { await cloudSave(); } catch(e) { console.warn('Cloud save po pridaní fotiek zlyhal:', e?.message||e); }
           });
         });
 
@@ -1292,12 +1277,10 @@
         try{ syncCreds=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); }catch{ syncCreds=null; }
         const idTxt=syncCreds?.gistId?(syncCreds.gistId.slice(0,8)+'…'):'—';
         const repoTxt=(syncCreds?.repoOwner&&syncCreds?.repoName)?`${syncCreds.repoOwner}/${syncCreds.repoName}`:'—';
-        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —') + (syncCreds?.auto?' • Auto':''));
-        const autoTop=document.getElementById('cloudAutoBtnTop'); if(autoTop) autoTop.textContent='AutoSync: '+(syncCreds?.auto?'ON':'OFF');
-        document.getElementById('cloudAutoBtn').textContent='AutoSync: '+(syncCreds?.auto?'ON':'OFF');
+        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —'));
       }
       function saveSyncCreds(creds){
-        syncCreds={ gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), auto:!!creds.auto, repoOwner:(creds.repoOwner||'').trim(), repoName:(creds.repoName||'').trim(), repoBranch:(creds.repoBranch||'main').trim(), repoFolder:(creds.repoFolder||'bozp-photos').trim() };
+        syncCreds={ gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), repoOwner:(creds.repoOwner||'').trim(), repoName:(creds.repoName||'').trim(), repoBranch:(creds.repoBranch||'main').trim(), repoFolder:(creds.repoFolder||'bozp-photos').trim() };
         localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(syncCreds));
         loadSyncCreds();
       }
@@ -1306,7 +1289,6 @@
       function toggleCloudPopup(show=null){
         const pop=document.getElementById('cloudPopup'); const isShown=!pop.hasAttribute('hidden');
         const next=(show===null)?!isShown:show; if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
-        updateLockStateUI();
       }
 
       async function cloudCheckRate(){
@@ -1335,10 +1317,106 @@
         }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
       }
 
-      async function cloudSave(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+      // Pomocné na Contents API
+      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
+      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
+      function buildPhotoPath(photo, fileName){
+        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
+        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
+        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
+        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
+      }
+      async function listContents(owner, repo, path, branch){
+        const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,'')); // trim a encode
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
+        const res=await fetch(url,{headers:githubHeaders(false)});
+        if(res.status===404) return []; // neexistuje priečinok
+        if(!res.ok) throw new Error('Get contents: HTTP '+res.status);
+        const j=await res.json();
+        return Array.isArray(j)?j:[j];
+      }
+      async function getFileSha(owner, repo, path, branch){
+        const items=await listContents(owner, repo, path, branch);
+        const file=items && items[0] && items[0].type==='file' ? items[0] : null;
+        return file ? file.sha || null : null;
+      }
+      function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
+      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
+        const safePath=encodePathSegments(path);
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
+        const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
+        const res=await fetch(url,{method:'PUT',headers:githubHeaders(true),body:JSON.stringify(body)});
+        if(!res.ok){ const txt=await res.text(); console.warn('PUT failed:',res.status,txt); throw new Error(`Upload zlyhal: ${res.status} ${txt}`); }
+        return res.json();
+      }
+
+      async function tryUploadPhoto(photoId){
         try{
-          // ochrana pred "prepísaním novších dát staršími"
+          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
+          const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
+          const path=buildPhotoPath(p, p.name);
+          const base64=bufToBase64(await p.blob.arrayBuffer());
+          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
+          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
+          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
+          p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
+          await DB.updatePhoto(p);
+          try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
+        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
+      }
+
+      async function uploadPendingPhotos(){
+        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
+        const all=await DB.listAllPhotos();
+        const pending=all.filter(p=>!p.remoteUrl && p.blob);
+        if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
+        let ok=0,fail=0; for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
+        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
+      }
+
+      // Resync (dohratie) fotiek z repo do lokálnej DB podľa štruktúry: repoFolder/workplace-{ID}/task-{ID}/filename
+      function parseIdFromPrefixed(name, prefix){
+        const re=new RegExp(`^${prefix}-(\\d+)$`);
+        const m=String(name||'').match(re);
+        return m ? Number(m[1]) : null;
+      }
+      async function resyncPhotosFromRepo(){
+        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ console.warn('Cloud: repo kredencialy nie sú nastavené, preskakujem resync fotiek.'); return; }
+        const owner=syncCreds.repoOwner, repo=syncCreds.repoName, branch=syncCreds.repoBranch||'main';
+        const root=(syncCreds.repoFolder||'bozp-photos').replace(/^\/+|\/+$/g,'');
+        try{
+          const current=await DB.listAllPhotos();
+          const existingUrls=new Set(current.map(p=>p.remoteUrl).filter(Boolean));
+
+          const workplacesDirs=await listContents(owner, repo, root, branch);
+          for(const wDir of workplacesDirs.filter(x=>x.type==='dir')){
+            const wid=parseIdFromPrefixed(wDir.name,'workplace'); if(!wid) continue;
+            const tasksDirs=await listContents(owner, repo, `${root}/${wDir.name}`, branch);
+            for(const tDir of tasksDirs.filter(x=>x.type==='dir')){
+              const tid=parseIdFromPrefixed(tDir.name,'task'); if(!tid) continue;
+              const files=await listContents(owner, repo, `${root}/${wDir.name}/${tDir.name}`, branch);
+              for(const f of files.filter(x=>x.type==='file')){
+                const remoteUrl=f.download_url;
+                if(!remoteUrl || existingUrls.has(remoteUrl)) continue;
+                // vytvoríme "prázdny" file objekt aby sme mohli použiť DB.addPhoto
+                const dummyFile=new File([new Uint8Array(0)], f.name, { type: 'image/*' });
+                const pid=await DB.addPhoto(tid, wid, null, dummyFile);
+                const p=await DB.getPhoto(pid);
+                p.remoteUrl=remoteUrl; p.remoteSha=f.sha||null; p.uploadedAt=Date.now();
+                await DB.updatePhoto(p);
+                existingUrls.add(remoteUrl);
+              }
+            }
+          }
+        }catch(err){
+          console.warn('Resync fotiek z repo zlyhal:', err?.message||err);
+        }
+      }
+
+      async function cloudSave(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
+        try{
+          // ochrana pred prepísaním
           let remoteUpdatedAt=0;
           try{
             const j=await githubGetGist(syncCreds.gistId); const file=j?.files?.[GIST_FILE_NAME];
@@ -1351,7 +1429,7 @@
 
           const lastLoadedAt=Number(localStorage.getItem(LS_REMOTE_UPDATED_AT)||'0');
           if(remoteUpdatedAt>lastLoadedAt){
-            const proceed=confirm('V Giste sú novšie dáta z iného zariadenia. Najprv klikni „Načítať“, aby sa zosynchronizovali. Pokračovať aj tak a prepísať ich?');
+            const proceed=confirm('V Giste sú novšie dáta z iného zariadenia. Najprv klikni „Obnoviť“, aby sa zosynchronizovali. Pokračovať aj tak a prepísať ich?');
             if(!proceed){ setCloudState('Zrušené'); return; }
           }
 
@@ -1367,60 +1445,12 @@
         }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
 
-      function syncMaybeUpload(){
-        if(!syncCreds?.auto || syncBusy) return;
-        if(syncTimer) clearTimeout(syncTimer);
-        syncTimer=setTimeout(async()=>{ syncTimer=null; syncBusy=true; try{ await cloudSave(); } finally{ syncBusy=false; } }, syncBackoffMs);
-      }
-
-      // GitHub repo (photos) – bezpečné enkódovanie cesty po segmentoch
-      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
-      function buildPhotoPath(photo, fileName){
-        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
-        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
-        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
-        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
-      }
-      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
-      async function getFileSha(owner, repo, path, branch){
-        const safePath=encodePathSegments(path);
-        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
-        const res=await fetch(url,{headers:githubHeaders(false)}); if(res.status===404) return null; if(!res.ok) throw new Error('Get content: HTTP '+res.status); const j=await res.json(); return j.sha||null;
-      }
-      function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
-      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
-        const safePath=encodePathSegments(path);
-        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
-        const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
-        const res=await fetch(url,{method:'PUT',headers:githubHeaders(true),body:JSON.stringify(body)});
-        if(!res.ok){ const txt=await res.text(); console.warn('PUT failed:',res.status,txt); throw new Error(`Upload zlyhal: ${res.status} ${txt}`); }
-        return res.json();
-      }
-
-      async function tryUploadPhoto(photoId){
-        try{
-          if(!document.body.classList.contains('authed')) return;
-          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
-          const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
-          const path=buildPhotoPath(p, p.name);
-          const base64=bufToBase64(await p.blob.arrayBuffer());
-          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
-          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
-          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
-          p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
-          await DB.updatePhoto(p);
-          try{ syncMaybeUpload(); }catch(e){}
-          try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
-        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
-      }
-
-      async function uploadPendingPhotos(){
-        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
-        const all=await DB.listAllPhotos();
-        const pending=all.filter(p=>!p.remoteUrl && p.blob);
-        if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
-        let ok=0,fail=0; for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
-        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`); try{ syncMaybeUpload(); }catch(e){}
+      async function cloudRefresh(){
+        // načíta JSON a dohrá fotky z repo
+        await cloudLoad();
+        await resyncPhotosFromRepo();
+        // po resyncu obnovíme UI
+        await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); await loadTasksTable();
       }
 
       function bindCloudUI(){
@@ -1456,7 +1486,7 @@
         cloudOverlay.addEventListener('click',(e)=>{ if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
 
         cloudSaveCreds.addEventListener('click',()=>{
-          const creds={ gistId:cloudGistIdInput.value.trim(), token:cloudTokenInput.value.trim(), repoOwner:cloudRepoOwner.value.trim(), repoName:cloudRepoName.value.trim(), repoBranch:cloudRepoBranch.value.trim()||'main', repoFolder:cloudRepoFolder.value.trim()||'bozp-photos', auto:syncCreds?.auto||false };
+          const creds={ gistId:cloudGistIdInput.value.trim(), token:cloudTokenInput.value.trim(), repoOwner:cloudRepoOwner.value.trim(), repoName:cloudRepoName.value.trim(), repoBranch:cloudRepoBranch.value.trim()||'main', repoFolder:cloudRepoFolder.value.trim()||'bozp-photos' };
           if(!creds.token){ showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
           saveSyncCreds(creds); alert('Cloud: nastavenia uložené.'); cloudOverlay.setAttribute('aria-hidden','true');
         });
@@ -1472,50 +1502,16 @@
         });
 
         // Spodné tlačidlá
-        document.getElementById('cloudLoadBtn').addEventListener('click', cloudLoad);
-        document.getElementById('cloudSaveBtn').addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
-        document.getElementById('cloudAutoBtn').addEventListener('click', ()=>{
-          const c=syncCreds||{gistId:'',token:'',auto:false}; c.auto=!c.auto; saveSyncCreds(c);
-        });
-        document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
+        document.getElementById('cloudLoadBtn').addEventListener('click', cloudRefresh);
+        document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
         document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
         document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
+        document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
 
-        // Horné tlačidlá
-        const loadTop=document.getElementById('cloudLoadBtnTop');
-        const saveTop=document.getElementById('cloudSaveBtnTop');
-        const uploadTop=document.getElementById('cloudUploadBtnTop');
-        const autoTop=document.getElementById('cloudAutoBtnTop');
-        if(loadTop) loadTop.addEventListener('click', cloudLoad);
-        if(saveTop) saveTop.addEventListener('click', async()=>{ await cloudSave(); syncMaybeUpload(); });
-        if(uploadTop) uploadTop.addEventListener('click', uploadPendingPhotos);
-        if(autoTop) autoTop.addEventListener('click', ()=>{
-          const c=syncCreds||{gistId:'',token:'',auto:false}; c.auto=!c.auto; saveSyncCreds(c);
-        });
-
-        document.getElementById('unlockBtn').addEventListener('click', unlockWithPassword);
-        document.getElementById('unlockPass').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); unlockWithPassword(); }});
-        document.getElementById('lockBtn').addEventListener('click', lockUI);
+        // Horné tlačidlo „Obnoviť“
+        const refreshTop=document.getElementById('cloudRefreshBtnTop');
+        if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
       }
-
-      function updateLockStateUI(){
-        const lockState=document.getElementById('lockState');
-        lockState.textContent=document.body.classList.contains('authed')?'Odomknuté':'Zamknuté';
-        const errEl=document.getElementById('unlockError'); errEl.classList.remove('show'); errEl.textContent='';
-      }
-      function applyAuthFromStorage(){
-        const unlocked=localStorage.getItem(LS_AUTH_KEY)==='1';
-        document.body.classList.toggle('authed', !!unlocked);
-        const autoTop=document.getElementById('cloudAutoBtnTop');
-        if(autoTop){ const cfg=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'{}'); autoTop.textContent='AutoSync: '+(cfg?.auto?'ON':'OFF'); }
-        updateLockStateUI();
-      }
-      function unlockWithPassword(){
-        const pw=(document.getElementById('unlockPass').value||'').trim();
-        if(pw===AUTH_PASSWORD){ localStorage.setItem(LS_AUTH_KEY,'1'); applyAuthFromStorage(); document.getElementById('unlockPass').value=''; }
-        else{ const errEl=document.getElementById('unlockError'); errEl.textContent='Nesprávne heslo.'; errEl.classList.add('show'); }
-      }
-      function lockUI(){ localStorage.removeItem(LS_AUTH_KEY); applyAuthFromStorage(); closeModal(); }
     })();
   </script>
 </body>
