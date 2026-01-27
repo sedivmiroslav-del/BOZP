@@ -136,7 +136,7 @@
     .cloudHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-bottom:2px solid var(--light-gray)}
     .cloudBody{padding:12px;display:grid;gap:12px}
     .cloudGrid{display:grid;gap:10px}
-    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:center}
+    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;aligns-items:center}
     .cloudGrid label{font-weight:600;color:#1f2937}
     .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
     .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
@@ -171,7 +171,7 @@
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#main"></a>
+  <a class="skip-link" href="#main">Preskočiť na hlavný obsah</a>
 
   <header class="app-header" role="banner">
     <div class="brand">
@@ -1112,7 +1112,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1181,7 +1181,7 @@
           }
         }
 
-        // po uložení údajov do DB ihneď uložíme JSON do Gist (ak sú kredencialy)
+        // po uložení DB ihneď uložíme JSON do Gist (ak sú kredencialy)
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.');
@@ -1194,6 +1194,15 @@
         loadTasksTable();
         ['filter-task-status','filter-task-segment','filter-task-costcenter'].forEach(id=>document.getElementById(id).addEventListener('change', loadTasksTable));
         document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
+      }
+
+      // NOVÉ: odraz stavu úlohy do hodnotenia (Splnená => IO, iné => NIO)
+      async function reflectTaskStatusInAssessment(task){
+        if(!task || !task.workplaceId || !task.topicKey) return;
+        const current=await DB.getAssessment(task.workplaceId);
+        const statuses=(current?.statuses) ? {...current.statuses} : {};
+        statuses[task.topicKey] = (task.status === 'Splnená') ? 'IO' : 'NIO';
+        await DB.saveAssessment(task.workplaceId, statuses);
       }
 
       async function loadTasksTable(){
@@ -1237,7 +1246,15 @@
           sel.addEventListener('change',async()=>{
             const id=Number(sel.getAttribute('data-id'));
             const tasks=await DB.listTasks(); const t=tasks.find(x=>x.id===id); if(!t) return;
-            t.status=sel.value; await DB.updateTask(t); loadTasksTable();
+            t.status=sel.value; await DB.updateTask(t);
+            // odraz do hodnotenia
+            await reflectTaskStatusInAssessment(t);
+            // UI refresh
+            await loadTasksTable();
+            await loadWorkplacesTable();
+            updateDashboard();
+            // sync cloud
+            try { await cloudSave(); } catch(e) {}
           });
         });
 
@@ -1567,4 +1584,3 @@
   </script>
 </body>
 </html>
-
