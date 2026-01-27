@@ -136,7 +136,7 @@
     .cloudHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-bottom:2px solid var(--light-gray)}
     .cloudBody{padding:12px;display:grid;gap:12px}
     .cloudGrid{display:grid;gap:10px}
-    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;aligns-items:center}
+    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:center}
     .cloudGrid label{font-weight:600;color:#1f2937}
     .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
     .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
@@ -740,54 +740,67 @@
   <!-- Charts helper -->
   <script>
     (function(){
+      // Stabilné kľúče (keys) – krátke slugs. Zobrazené texty (name) sú vaše nové dlhé popisy.
       const CHART_TOPICS = [
-        {key:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy 
-', name:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy 
-'},
-        {key:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby 
-(stlačením tlačidla dochádza k pohybu na doraz)', name:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby 
-(stlačením tlačidla dochádza k pohybu na doraz)'},
-        {key:'Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené', name:'Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené'},
-        {key:'Žľaby, lišty, výstupné pásy sú nevhodne konštruované
-Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“ 
-', name:'Žľaby, lišty, výstupné pásy sú nevhodne konštruované
-Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“ 
-'},
-        {key:'Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)    
-', name:'Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)    
-'},
-        {key:'Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)
-', name:'Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)
-'},
-        {key:'Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané 
-', name:'Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané 
-'},
-        {key:'Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických) 
-', name:'Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických) 
-'},
-        {key:'Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania 
-', name:'Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania 
-'},
-        {key:'Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaná správny postup kontroly bezpečnostných koncových spínačov
-', name:'Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaná správny postup kontroly bezpečnostných koncových spínačov
-'},
-        {key:'Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách  
-', name:'Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách  
-'},
-        {key:'Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce) 
-', name:'Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce) 
-'},
-        {key:'Neodbornými zásahmi (PDCA, IF..)  do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE) 
-', name:'Neodbornými zásahmi (PDCA, IF..)  do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE) 
-'},
-        {key:'Dochádza k produkovaniu na strojoch ktoré nemajú vykonanú prebierku stroja 
-', name:'Dochádza k produkovaniu na strojoch ktoré nemajú vykonanú prebierku stroja 
-'}
+        { key:'ovladacie_panely', name:`Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy` },
+        { key:'suporty', name:`Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)` },
+        { key:'koncove_spinace', name:`Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené` },
+        { key:'zlaby_listy', name:`Žľaby, lišty, výstupné pásy sú nevhodne konštruované
+Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
+        { key:'zaseknute_diely', name:`Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)` },
+        { key:'zakonne_skolenia_podnikove', name:`Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)` },
+        { key:'matica_kvalifikacie', name:`Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané` },
+        { key:'skoliace_materialy_nnos', name:`Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických)` },
+        { key:'postupy_pretypovania', name:`Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania` },
+        { key:'cistiace_inspekcne_plany', name:`Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaný správny postup kontroly bezpečnostných koncových spínačov` },
+        { key:'analyza_rizik', name:`Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách` },
+        { key:'kontrolne_mechanizmy', name:`Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce)` },
+        { key:'revizia_pracoviska_ce', name:`Neodbornými zásahmi (PDCA, IF..) do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE)` },
+        { key:'prebierka_stroja', name:`Dochádza k produkovaniu na strojoch, ktoré nemajú vykonanú prebierku stroja` }
       ];
       let chartPie=null, chartBar=null;
 
-      function renderPie(ioCount, nioCount){ const ctx=document.getElementById('chart-io-nio').getContext('2d'); if(chartPie) chartPie.destroy(); chartPie=new Chart(ctx,{type:'pie',data:{labels:['IO','NIO'],datasets:[{data:[ioCount,nioCount],backgroundColor:['rgb(161,200,97)','rgb(255,255,96)'],borderColor:['rgb(0,0,0)','rgb(0,0,0)'],borderWidth:1}]},options:{plugins:{legend:{position:'bottom'}}}}); }
-      function renderBar(topicNioCounts){ const ctx=document.getElementById('chart-topics-nio').getContext('2d'); if(chartBar) chartBar.destroy(); chartBar=new Chart(ctx,{type:'bar',data:{labels:CHART_TOPICS.map(t=>t.name),datasets:[{label:'Počet NIO',data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),backgroundColor:'rgb(29,155,178)',borderColor:'rgb(0,0,0)',borderWidth:1}]},options:{indexAxis:'x',scales:{y:{beginAtZero:true,ticks:{precision:0}}},plugins:{legend:{position:'bottom'}}}}); }
+      function renderPie(ioCount, nioCount){
+        const ctx=document.getElementById('chart-io-nio').getContext('2d');
+        if(chartPie) chartPie.destroy();
+        chartPie=new Chart(ctx,{
+          type:'pie',
+          data:{
+            labels:['IO','NIO'],
+            datasets:[{
+              data:[ioCount,nioCount],
+              backgroundColor:['rgb(161,200,97)','rgb(255,255,96)'],
+              borderColor:['rgb(0,0,0)','rgb(0,0,0)'],
+              borderWidth:1
+            }]
+          },
+          options:{ plugins:{ legend:{ position:'bottom' } } }
+        });
+      }
+
+      function renderBar(topicNioCounts){
+        const ctx=document.getElementById('chart-topics-nio').getContext('2d');
+        if(chartBar) chartBar.destroy();
+        chartBar=new Chart(ctx,{
+          type:'bar',
+          data:{
+            labels:CHART_TOPICS.map(t=>t.name),
+            datasets:[{
+              label:'Počet NIO',
+              data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),
+              backgroundColor:'rgb(29,155,178)',
+              borderColor:'rgb(0,0,0)',
+              borderWidth:1
+            }]
+          },
+          options:{
+            indexAxis:'x',
+            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } },
+            plugins:{ legend:{ position:'bottom' } }
+          }
+        });
+      }
+
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
@@ -806,7 +819,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
       const GIST_FILE_NAME = 'bozp_export.json';
 
       let syncCreds = null;
-      let rateLimit = { remaining:null, reset:null };
 
       document.addEventListener('DOMContentLoaded', init);
 
@@ -1056,7 +1068,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
 
       async function exportWorkplacesCSV(){
         const ws = await DB.listWorkplaces();
-        const rows = ws.map(w=>({ Segment:w.segment, 'Nákladové stredisko':w.costCenter, Equipment:w.equipment, 'Názov stroja':w.machineName }));
+      const rows = ws.map(w=>({ Segment:w.segment, 'Nákladové stredisko':w.costCenter, Equipment:w.equipment, 'Názov stroja':w.machineName }));
         const csv = toCSV(rows, ['Segment','Nákladové stredisko','Equipment','Názov stroja']);
         downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'pracoviska.csv');
       }
@@ -1140,7 +1152,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1209,12 +1221,14 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
           }
         }
 
-        // po uložení DB ihneď uložíme JSON do Gist (ak sú kredencialy)
+        // po uložení údajov do DB ihneď uložíme JSON do Gist (ak sú kredencialy)
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.');
+
         // návrat na Pracoviská po uložení
         navigate('workplaces');
+
         updateDashboard(); loadWorkplacesTable();
       }
 
@@ -1224,7 +1238,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
       }
 
-      // NOVÉ: odraz stavu úlohy do hodnotenia (Splnená => IO, iné => NIO)
+      // odraz stavu úlohy do hodnotenia (Splnená => IO, iné => NIO)
       async function reflectTaskStatusInAssessment(task){
         if(!task || !task.workplaceId || !task.topicKey) return;
         const current=await DB.getAssessment(task.workplaceId);
@@ -1275,13 +1289,10 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
             const id=Number(sel.getAttribute('data-id'));
             const tasks=await DB.listTasks(); const t=tasks.find(x=>x.id===id); if(!t) return;
             t.status=sel.value; await DB.updateTask(t);
-            // odraz do hodnotenia
             await reflectTaskStatusInAssessment(t);
-            // UI refresh
             await loadTasksTable();
             await loadWorkplacesTable();
             updateDashboard();
-            // sync cloud
             try { await cloudSave(); } catch(e) {}
           });
         });
@@ -1291,7 +1302,12 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
             const id=Number(btn.getAttribute('data-id'));
             const photos=await DB.listPhotosByTask(id);
             const modalBody=document.getElementById('modal-body'); modalBody.innerHTML='';
-            for(const p of photos){ const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : ''); if(!src) continue; const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img); }
+            for(const p of photos){
+              const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
+              if(!src) continue;
+              const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`});
+              modalBody.appendChild(img);
+            }
             openModal();
           });
         });
@@ -1306,8 +1322,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
               await tryUploadPhoto(pid); // automaticky upload do repo
             }
             input.value=''; loadTasksTable();
-
-            // po pridaní fotiek rovno uložíme JSON do Gist
             try { await cloudSave(); } catch(e) { console.warn('Cloud save po pridaní fotiek zlyhal:', e?.message||e); }
           });
         });
@@ -1366,7 +1380,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
       function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
       function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
       function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
-      function updateRateFromHeaders(res){ const remain=res.headers.get('X-RateLimit-Remaining'); const reset=res.headers.get('X-RateLimit-Reset'); rateLimit.remaining=remain!=null?parseInt(remain,10):null; rateLimit.reset=reset!=null?parseInt(reset,10):null; }
       function setCloudState(msg){ document.getElementById('cloudState').textContent=msg; }
 
       function loadSyncCreds(){
@@ -1387,15 +1400,22 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         const next=(show===null)?!isShown:show; if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
       }
 
+      async function githubGetGist(id){
+        const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(id),{headers:githubHeaders(false)});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return res.json();
+      }
+
       async function cloudCheckRate(){
         if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
         try{
-          const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)}); updateRateFromHeaders(res); const j=await res.json();
-          const core=j?.resources?.core; const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
+          const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)});
+          const j=await res.json();
+          const core=j?.resources?.core;
+          const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
           alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
         }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
       }
-      async function githubGetGist(id){ const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(id),{headers:githubHeaders(false)}); updateRateFromHeaders(res); if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }
 
       async function cloudLoad(){
         if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
@@ -1405,7 +1425,10 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
           let file=j?.files?.[GIST_FILE_NAME];
           if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
           let contentStr=file.content;
-          if(!contentStr && file.raw_url){ const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}}); updateRateFromHeaders(rawRes); contentStr=await rawRes.text(); }
+          if(!contentStr && file.raw_url){
+            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
+            contentStr=await rawRes.text();
+          }
           const data=JSON.parse(contentStr); await DB.importJSON(data);
           try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
           setCloudState('Načítané');
@@ -1413,7 +1436,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
       }
 
-      // Pomocné na Contents API
+      // GitHub Contents API helpers
       function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
       function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
       function buildPhotoPath(photo, fileName){
@@ -1423,10 +1446,10 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
       }
       async function listContents(owner, repo, path, branch){
-        const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,'')); // trim a encode
+        const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,''));
         const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
         const res=await fetch(url,{headers:githubHeaders(false)});
-        if(res.status===404) return []; // neexistuje priečinok/súbor
+        if(res.status===404) return [];
         if(!res.ok) throw new Error('Get contents: HTTP '+res.status);
         const j=await res.json();
         return Array.isArray(j)?j:[j];
@@ -1466,11 +1489,12 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         const all=await DB.listAllPhotos();
         const pending=all.filter(p=>!p.remoteUrl && p.blob);
         if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
-        let ok=0,fail=0; for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
+        let ok=0,fail=0;
+        for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
         alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
       }
 
-      // Resync (dohratie) fotiek z repo do lokálnej DB podľa štruktúry: repoFolder/workplace-{ID}/task-{ID}/filename
+      // Resync fotiek z repo do lokálnej DB podľa štruktúry: repoFolder/workplace-{ID}/task-{ID}/filename
       function parseIdFromPrefixed(name, prefix){
         const re=new RegExp(`^${prefix}-(\\d+)$`);
         const m=String(name||'').match(re);
@@ -1494,7 +1518,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
               for(const f of files.filter(x=>x.type==='file')){
                 const remoteUrl=f.download_url;
                 if(!remoteUrl || existingUrls.has(remoteUrl)) continue;
-                // vytvoríme "prázdny" file objekt aby sme mohli použiť DB.addPhoto
                 const dummyFile=new File([new Uint8Array(0)], f.name, { type: 'image/*' });
                 const pid=await DB.addPhoto(tid, wid, null, dummyFile);
                 const p=await DB.getPhoto(pid);
@@ -1512,29 +1535,11 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
       async function cloudSave(){
         if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
         try{
-          // ochrana pred prepísaním
-          let remoteUpdatedAt=0;
-          try{
-            const j=await githubGetGist(syncCreds.gistId); const file=j?.files?.[GIST_FILE_NAME];
-            if(file){
-              let contentStr=file.content;
-              if(!contentStr && file.raw_url){ const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}}); updateRateFromHeaders(rawRes); contentStr=await rawRes.text(); }
-              const remote=contentStr?JSON.parse(contentStr):null; remoteUpdatedAt=remote?.meta?.updatedAt||0;
-            }
-          }catch(e){}
-
-          const lastLoadedAt=Number(localStorage.getItem(LS_REMOTE_UPDATED_AT)||'0');
-          if(remoteUpdatedAt>lastLoadedAt){
-            const proceed=confirm('V Giste sú novšie dáta z iného zariadenia. Najprv klikni „Obnoviť“, aby sa zosynchronizovali. Pokračovať aj tak a prepísať ich?');
-            if(!proceed){ setCloudState('Zrušené'); return; }
-          }
-
           setCloudState('Ukladám…');
           const payload=await DB.exportJSON();
           const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
           const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
           const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
-          updateRateFromHeaders(res);
           if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
           try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
           setCloudState('Uložené');
@@ -1542,10 +1547,8 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
       }
 
       async function cloudRefresh(){
-        // načíta JSON a dohrá fotky z repo
         await cloudLoad();
         await resyncPhotosFromRepo();
-        // po resyncu obnovíme UI
         await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); await loadTasksTable();
       }
 
@@ -1592,7 +1595,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
           try{
             const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
             const res=await fetch('https://api.github.com/gists',{method:'POST',headers:githubHeadersWithToken(tk,true),body:JSON.stringify({description:'BOZP Workspace',public:false,files:{[GIST_FILE_NAME]:{content:payloadStr}}})});
-            updateRateFromHeaders(res); if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
+            if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
             const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
           }catch(err){ showCloudError(err.message); }
         });
@@ -1604,7 +1607,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
         document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
         document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
 
-        // Horné tlačidlo „Obnoviť“
         const refreshTop=document.getElementById('cloudRefreshBtnTop');
         if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
       }
@@ -1612,4 +1614,3 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“
   </script>
 </body>
 </html>
-
