@@ -184,7 +184,7 @@
         <li><a href="#" data-route="tasks" class="nav-link">Úlohy</a></li>
         <li><a href="#" data-route="importExport" class="nav-link">Import/Export</a></li>
       </ul>
-      <!-- NOVÉ: Horné tlačidlo Obnoviť -->
+      <!-- Horné tlačidlo Obnoviť -->
       <div class="header-actions" aria-label="Cloud akcie">
         <button id="cloudRefreshBtnTop" class="btn" type="button" title="Načítať dáta z Gistu + dohrať fotky z repo">Obnoviť</button>
       </div>
@@ -598,6 +598,18 @@
           if (useMemory) { mem.assessments.set(workplaceId, rec); return; }
           await put(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), rec);
         },
+        async deleteAssessment(workplaceId){
+          const db = await openDb();
+          if (useMemory) { mem.assessments.delete(workplaceId); return; }
+          await del(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), workplaceId);
+        },
+        async cancelAssessmentForWorkplace(workplaceId){
+          await this.deleteAssessment(workplaceId);
+          const tasks = await this.listTasks();
+          for (const t of tasks.filter(x=>x.workplaceId===workplaceId)){
+            await this.deleteTask(t.id); // zmaže aj fotky danej úlohy
+          }
+        },
 
         async listTasks(filter={}){
           const db = await openDb();
@@ -972,6 +984,7 @@
             <td>
               <div class="action-group">
                 <button class="btn secondary" data-action="assess" data-id="${w.id}">Hodnotiť</button>
+                <button class="btn danger" data-action="cancel" data-id="${w.id}">Zrušiť hodnotenie</button>
                 <button class="btn danger" data-action="delete" data-id="${w.id}">Zmazať</button>
               </div>
             </td>`;
@@ -986,6 +999,7 @@
             await refreshFilters();
             await fillAssessmentSelector();
             updateDashboard();
+            try { await cloudSave(); } catch(e){}
           });
         });
         tbody.querySelectorAll('button[data-action="assess"]').forEach(btn=>{
@@ -994,6 +1008,19 @@
             await fillAssessmentSelector();
             document.getElementById('assessment-workplace').value = btn.getAttribute('data-id');
             document.getElementById('btn-start-assessment').click();
+          });
+        });
+        // NOVÉ: Zrušiť hodnotenie (anuluje IO/NIO, zmaže úlohy a fotky pre dané pracovisko)
+        tbody.querySelectorAll('button[data-action="cancel"]').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            if(!confirm('Zrušiť hodnotenie pre toto pracovisko? Zmažú sa aj všetky úlohy a fotky pre dané pracovisko.')) return;
+            const id=Number(btn.getAttribute('data-id'));
+            await DB.cancelAssessmentForWorkplace(id);
+            await loadWorkplacesTable();
+            await refreshFilters();
+            await fillAssessmentSelector();
+            updateDashboard();
+            try { await cloudSave(); } catch(e){}
           });
         });
       }
@@ -1012,7 +1039,7 @@
           let rows=[];
           if(file.name.toLowerCase().endsWith('.csv')){
             const text=await file.text();
-            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v && v.trim().length>0));
+            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v a&& v.trim().length>0));
           }else{
             const data=new Uint8Array(await file.arrayBuffer());
             const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
@@ -1158,7 +1185,7 @@
 
         alert('Hodnotenie uložené.');
 
-        // NOVÉ: návrat na Pracoviská po uložení
+        // návrat na Pracoviská po uložení
         navigate('workplaces');
 
         updateDashboard(); loadWorkplacesTable();
@@ -1220,11 +1247,7 @@
             const id=Number(btn.getAttribute('data-id'));
             const photos=await DB.listPhotosByTask(id);
             const modalBody=document.getElementById('modal-body'); modalBody.innerHTML='';
-            for(const p of photos){
-              const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
-              if(!src) continue;
-              const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img);
-            }
+            for(const p of photos){ const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : ''); if(!src) continue; const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`}); modalBody.appendChild(img); }
             openModal();
           });
         });
