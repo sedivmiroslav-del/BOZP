@@ -187,8 +187,9 @@
       user-select:none; -webkit-user-drag:none;
       will-change: transform;
       transform-origin: center center;
-      max-width:none; max-height:none;
+      max-width:none; max-height:none; /* skaluje sa výlučne cez transform */
       cursor: grab;
+      visibility:hidden; /* skryté, kým sa nenastaví prispôsobenie */
     }
     .imgToolBtn{
       padding:6px 10px; border:1px solid var(--light-gray); border-radius:8px;
@@ -227,6 +228,7 @@
   </header>
 
   <main id="main" class="app-main" role="main">
+    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view" aria-labelledby="dashboard-title">
       <h2 id="dashboard-title">Prehľad a vizualizácie</h2>
       <div class="filters">
@@ -264,6 +266,7 @@
       </div>
     </section>
 
+    <!-- WORKPLACES -->
     <section id="view-workplaces" class="view" aria-labelledby="workplaces-title" hidden>
       <h2 id="workplaces-title">Správa pracovísk</h2>
 
@@ -343,6 +346,7 @@
       </div>
     </section>
 
+    <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
 
@@ -364,6 +368,7 @@
       </form>
     </section>
 
+    <!-- TASKS -->
     <section id="view-tasks" class="view" aria-labelledby="tasks-title" hidden>
       <h2 id="tasks-title">Úlohy z NIO</h2>
 
@@ -406,6 +411,7 @@
       </div>
     </section>
 
+    <!-- IMPORT/EXPORT + Cloud -->
     <section id="view-importExport" class="view" aria-labelledby="importexport-title" hidden>
       <h2 id="importexport-title">Import/Export dát</h2>
 
@@ -466,7 +472,7 @@
     </div>
   </div>
 
-  <!-- Image Viewer (zoom) -->
+  <!-- Image Viewer (zoom s prispôsobením oknu) -->
   <div id="imgViewer" class="imgViewer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="imgViewerTitle">
     <div class="imgViewer-content" role="document">
       <div class="imgViewer-header">
@@ -474,7 +480,7 @@
         <div class="imgViewer-tools" aria-label="Ovládanie zväčšenia">
           <button id="imgZoomOut" class="imgToolBtn" type="button" aria-label="Zmenšiť">−</button>
           <button id="imgZoomIn" class="imgToolBtn" type="button" aria-label="Zväčšiť">+</button>
-          <button id="imgZoomReset" class="imgToolBtn" type="button" aria-label="Resetovať zobrazenie">Reset</button>
+          <button id="imgZoomReset" class="imgToolBtn" type="button" aria-label="Prispôsobiť oknu">Prispôsobiť</button>
           <button id="imgViewerClose" class="imgToolBtn" type="button" aria-label="Zavrieť">Zavrieť</button>
         </div>
       </div>
@@ -538,9 +544,9 @@
       let useMemory = false;
       const mem = {
         workplaces: [],
-        assessments: new Map(),
+        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
         tasks: [],
-        photos: [],
+        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -655,7 +661,7 @@
           await this.deleteAssessment(workplaceId);
           const tasks = await this.listTasks();
           for (const t of tasks.filter(x=>x.workplaceId===workplaceId)){
-            await this.deleteTask(t.id);
+            await this.deleteTask(t.id); // zmaže aj fotky danej úlohy
           }
         },
 
@@ -882,11 +888,11 @@
 
       let syncCreds = null;
 
-      // Image viewer (zoom) state
+      // Image viewer state
       const viewer = {
         overlay: null, body: null, img: null,
         zoomInBtn: null, zoomOutBtn: null, resetBtn: null, closeBtn: null,
-        scale: 1, tx: 0, ty: 0, isDragging: false, lastX: 0, lastY: 0
+        scale: 1, fitScale: 1, tx: 0, ty: 0, isDragging: false, lastX: 0, lastY: 0
       };
 
       document.addEventListener('DOMContentLoaded', init);
@@ -896,7 +902,7 @@
 
         document.getElementById('modal-close').addEventListener('click', closeModal);
         document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeImageViewer(); } });
 
         initImageViewer();
 
@@ -1244,7 +1250,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1275,7 +1281,6 @@
           if(!src) continue;
           const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`}); const name=createEl('span'); name.textContent=p.name;
           attachImgErrorCleanup(img, p, item);
-          // umožni zväčšenie aj tu
           img.addEventListener('click', ()=> openImageViewer(src, `Fotka k téme (${topicKey})`));
           item.append(img,name); photosWrap.appendChild(item);
         }
@@ -1400,7 +1405,6 @@
               const item=createEl('div',{}); 
               const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`});
               attachImgErrorCleanup(img, p, item);
-              // klik na náhľad otvorí zoomač
               img.addEventListener('click', ()=> openImageViewer(src, `Fotka úlohy ${p.name}`));
               item.appendChild(img);
               modalBody.appendChild(item);
@@ -1470,6 +1474,7 @@
         });
       }
 
+      /* Cloud (Gist) + GitHub repo (fotky) – helpery */
       function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
       function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
       function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
@@ -1508,6 +1513,25 @@
           const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
           alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
         }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
+      }
+
+      async function cloudLoad(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Načítavam…');
+          const j=await githubGetGist(syncCreds.gistId);
+          let file=j?.files?.[GIST_FILE_NAME];
+          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
+          let contentStr=file.content;
+          if(!contentStr && file.raw_url){
+            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
+            contentStr=await rawRes.text();
+          }
+          const data=JSON.parse(contentStr); await DB.importJSON(data);
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
+          setCloudState('Načítané');
+          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
       }
 
       function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
@@ -1627,90 +1651,13 @@
         }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
 
-      async function cloudLoad(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
-        try{
-          setCloudState('Načítavam…');
-          const j=await githubGetGist(syncCreds.gistId);
-          let file=j?.files?.[GIST_FILE_NAME];
-          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
-          let contentStr=file.content;
-          if(!contentStr && file.raw_url){
-            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
-            contentStr=await rawRes.text();
-          }
-          const data=JSON.parse(contentStr); await DB.importJSON(data);
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
-          setCloudState('Načítané');
-          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
-        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
-      }
-
       async function cloudRefresh(){
         await cloudLoad();
         await resyncPhotosFromRepo();
         await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); await loadTasksTable();
       }
 
-      function bindCloudUI(){
-        const cloudBtn=document.getElementById('cloudBtn');
-        const cloudOverlay=document.getElementById('cloudOverlay');
-        const cloudClose=document.getElementById('cloudClose');
-        const cloudGistIdInput=document.getElementById('cloudGistId');
-        const cloudTokenInput=document.getElementById('cloudToken');
-        const cloudRepoOwner=document.getElementById('cloudRepoOwner');
-        const cloudRepoName=document.getElementById('cloudRepoName');
-        const cloudRepoBranch=document.getElementById('cloudRepoBranch');
-        const cloudRepoFolder=document.getElementById('cloudRepoFolder');
-        const cloudSaveCreds=document.getElementById('cloudSaveCreds');
-        const cloudCreateGist=document.getElementById('cloudCreateGist');
-        const cloudErrorEl=document.getElementById('cloudError');
-        const cloudNoteEl=document.getElementById('cloudNote');
-
-        function showCloudError(msg){ cloudErrorEl.textContent=msg; cloudErrorEl.classList.add('show'); }
-        function clearCloudError(){ cloudErrorEl.textContent=''; cloudErrorEl.classList.remove('show'); }
-
-        cloudBtn.addEventListener('click',()=>toggleCloudPopup());
-        document.addEventListener('click',(e)=>{ const pop=document.getElementById('cloudPopup'); if(!pop.hasAttribute('hidden')){ if(!e.target.closest('#cloudPopup') && !e.target.closest('#cloudBtn')) toggleCloudPopup(false); }});
-
-        document.getElementById('cloudSettingsBtn').addEventListener('click',()=>{
-          clearCloudError(); cloudNoteEl.textContent='';
-          const c=syncCreds||{};
-          cloudGistIdInput.value=c.gistId||''; cloudTokenInput.value=c.token||'';
-          cloudRepoOwner.value=c.repoOwner||''; cloudRepoName.value=c.repoName||'';
-          cloudRepoBranch.value=c.repoBranch||'main'; cloudRepoFolder.value=c.repoFolder||'bozp-photos';
-          cloudOverlay.setAttribute('aria-hidden','false');
-        });
-        cloudClose.addEventListener('click',()=>cloudOverlay.setAttribute('aria-hidden','true'));
-        cloudOverlay.addEventListener('click',(e)=>{ if(e.target===cloudOverlay) cloudOverlay.setAttribute('aria-hidden','true'); });
-
-        cloudSaveCreds.addEventListener('click',()=>{
-          const creds={ gistId:cloudGistIdInput.value.trim(), token:cloudTokenInput.value.trim(), repoOwner:cloudRepoOwner.value.trim(), repoName:cloudRepoName.value.trim(), repoBranch:cloudRepoBranch.value.trim()||'main', repoFolder:cloudRepoFolder.value.trim()||'bozp-photos' };
-          if(!creds.token){ showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
-          saveSyncCreds(creds); alert('Cloud: nastavenia uložené.'); cloudOverlay.setAttribute('aria-hidden','true');
-        });
-
-        cloudCreateGist.addEventListener('click',async()=>{
-          const tk=cloudTokenInput.value.trim()||syncCreds?.token||''; if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
-          try{
-            const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
-            const res=await fetch('https://api.github.com/gists',{method:'POST',headers:githubHeadersWithToken(tk,true),body:JSON.stringify({description:'BOZP Workspace',public:false,files:{[GIST_FILE_NAME]:{content:payloadStr}}})});
-            if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
-            const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
-          }catch(err){ showCloudError(err.message); }
-        });
-
-        document.getElementById('cloudLoadBtn').addEventListener('click', cloudRefresh);
-        document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
-        document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
-        document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
-        document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ clearSyncCreds(); alert('Cloud: odhlásené.'); } });
-
-        const refreshTop=document.getElementById('cloudRefreshBtnTop');
-        if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
-      }
-
-      /* Image Viewer (zoom) */
+      /* Image Viewer (zoom + fit-to-window) */
       function initImageViewer(){
         viewer.overlay = document.getElementById('imgViewer');
         viewer.body    = document.getElementById('imgViewerBody');
@@ -1722,20 +1669,21 @@
 
         viewer.zoomInBtn.addEventListener('click', ()=> setViewerScale(viewer.scale * 1.2));
         viewer.zoomOutBtn.addEventListener('click', ()=> setViewerScale(viewer.scale / 1.2));
-        viewer.resetBtn.addEventListener('click', resetViewer);
+        viewer.resetBtn.addEventListener('click', fitToWindow);
         viewer.closeBtn.addEventListener('click', closeImageViewer);
         viewer.overlay.addEventListener('click', (e)=>{ if(e.target===viewer.overlay) closeImageViewer(); });
 
         viewer.body.addEventListener('wheel', (e)=>{
           e.preventDefault();
           const delta = e.deltaY;
-          if (delta>0) setViewerScale(viewer.scale/1.1);
-          else setViewerScale(viewer.scale*1.1);
+          const next = delta>0 ? viewer.scale/1.1 : viewer.scale*1.1;
+          setViewerScale(next);
         }, { passive:false });
 
         viewer.img.addEventListener('dblclick', ()=>{
-          if(viewer.scale<=1.01) setViewerScale(2);
-          else resetViewer();
+          // toggle medzi fit a 100%
+          if (Math.abs(viewer.scale - viewer.fitScale) < 0.01) setExactScale(1);
+          else fitToWindow();
         });
 
         viewer.img.addEventListener('mousedown', (e)=>{
@@ -1751,7 +1699,7 @@
           viewer.tx += dx; viewer.ty += dy; updateViewerTransform();
         });
 
-        // Touch (drag)
+        // Touch drag
         viewer.img.addEventListener('touchstart', (e)=>{
           if(e.touches.length===1){ viewer.isDragging=true; viewer.lastX=e.touches[0].clientX; viewer.lastY=e.touches[0].clientY; }
         }, {passive:true});
@@ -1770,7 +1718,7 @@
           if(viewer.overlay.getAttribute('aria-hidden')==='true') return;
           if(e.key==='+') setViewerScale(viewer.scale*1.2);
           else if(e.key==='-') setViewerScale(viewer.scale/1.2);
-          else if(e.key==='0') resetViewer();
+          else if(e.key==='0') fitToWindow();
           else if(e.key==='ArrowLeft') { viewer.tx-=20; updateViewerTransform(); }
           else if(e.key==='ArrowRight'){ viewer.tx+=20; updateViewerTransform(); }
           else if(e.key==='ArrowUp')   { viewer.ty-=20; updateViewerTransform(); }
@@ -1778,27 +1726,58 @@
           else if(e.key==='Escape') closeImageViewer();
         });
       }
+      function setExactScale(s){
+        viewer.scale = Math.max(0.2, Math.min(8, s));
+        centerImage();
+      }
       function setViewerScale(s){
         viewer.scale = Math.max(0.2, Math.min(8, s));
         updateViewerTransform();
       }
-      function resetViewer(){
-        viewer.scale=1; viewer.tx=0; viewer.ty=0; updateViewerTransform();
+      function fitToWindow(){
+        const bw = viewer.body.clientWidth;
+        const bh = viewer.body.clientHeight;
+        const iw = viewer.img.naturalWidth || viewer.img.width;
+        const ih = viewer.img.naturalHeight || viewer.img.height;
+        const fit = Math.min(bw/iw, bh/ih);
+        viewer.fitScale = fit;
+        viewer.scale = fit;
+        // centrovanie
+        viewer.tx = (bw - iw*fit)/2;
+        viewer.ty = (bh - ih*fit)/2;
+        updateViewerTransform();
+      }
+      function centerImage(){
+        const bw = viewer.body.clientWidth;
+        const bh = viewer.body.clientHeight;
+        const iw = viewer.img.naturalWidth || viewer.img.width;
+        const ih = viewer.img.naturalHeight || viewer.img.height;
+        viewer.tx = (bw - iw*viewer.scale)/2;
+        viewer.ty = (bh - ih*viewer.scale)/2;
+        updateViewerTransform();
       }
       function updateViewerTransform(){
         viewer.img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`;
+        viewer.img.style.visibility='visible';
       }
       function openImageViewer(src, alt){
+        viewer.img.style.visibility='hidden';
         viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
-        resetViewer();
         viewer.overlay.setAttribute('aria-hidden','false');
+        // počkaj na načítanie, potom prispôsob
+        const ready = ()=>{
+          viewer.img.removeEventListener('load', ready);
+          fitToWindow();
+        };
+        viewer.img.addEventListener('load', ready);
+        // ak už je v cache, load nemusí prísť – fallback
+        if (viewer.img.complete && viewer.img.naturalWidth) { ready(); }
       }
       function closeImageViewer(){
         viewer.overlay.setAttribute('aria-hidden','true');
-        viewer.img.src='';
+        viewer.img.src=''; viewer.img.style.visibility='hidden';
       }
 
-      // Expose for other handlers
       window.openImageViewer = openImageViewer;
     })();
   </script>
