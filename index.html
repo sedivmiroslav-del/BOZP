@@ -93,7 +93,7 @@
     .panel { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
 
     .table-wrap { margin-top: 16px; background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); overflow-x: auto; }
-    ..table { width: 100%; border-collapse: collapse; }
+    .table { width: 100%; border-collapse: collapse; }
     .table th, .table td { border-bottom: 1px solid var(--light-gray); padding: 8px; text-align: left; vertical-align: middle; }
     .table thead th { background: var(--light-gray); }
     .table tr:hover td { background: rgba(206,213,218,0.5); }
@@ -555,30 +555,30 @@
         async addWorkplace(w){
           const db = await openDb();
           const rec = { segment:String(w.segment||'').trim(), costCenter:String(w.costCenter||'').trim(), equipment:String(w.equipment||'').trim(), machineName:String(w.machineName||'').trim(), createdAt:Date.now() };
-          if (useMemory) { const id = mem.ids.workplace++; mem.workplaces.push({ id, ...rec }); return id; }
+          if (useMemory) { const id = mem.ids.workplace++; mem.workplaces.push({ id:id, segment:rec.segment, costCenter:rec.costCenter, equipment:rec.equipment, machineName:rec.machineName, createdAt:rec.createdAt }); return id; }
           const t = tx(db, ['workplaces'], 'readwrite');
           return await add(t.objectStore('workplaces'), rec);
         },
         async listWorkplaces(){
-          const db = await openDb(); if (useMemory) return [...mem.workplaces];
+          const db = await openDb(); if (useMemory) return mem.workplaces.slice();
           const t = tx(db, ['workplaces'], 'readonly');
           return await getAll(t.objectStore('workplaces'));
         },
         async deleteWorkplace(id){
           const db = await openDb();
           if (useMemory) {
-            mem.workplaces = mem.workplaces.filter(w => w.id !== id);
+            mem.workplaces = mem.workplaces.filter(function(w){ return w.id !== id; });
             mem.assessments.delete(id);
-            const tids = mem.tasks.filter(t => t.workplaceId === id).map(t => t.id);
-            mem.tasks = mem.tasks.filter(t => t.workplaceId !== id);
-            mem.photos = mem.photos.filter(p => !tids.includes(p.taskId));
+            const tids = mem.tasks.filter(function(t){ return t.workplaceId === id; }).map(function(t){ return t.id; });
+            mem.tasks = mem.tasks.filter(function(t){ return t.workplaceId !== id; });
+            mem.photos = mem.photos.filter(function(p){ return tids.indexOf(p.taskId) === -1; });
             return;
           }
           await del(tx(db, ['workplaces'], 'readwrite').objectStore('workplaces'), id);
           await del(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), id);
           const t = tx(db, ['tasks','photos'], 'readwrite');
           const tasks = await getAll(t.objectStore('tasks'));
-          const tids = tasks.filter(x => x.workplaceId === id).map(x => x.id);
+          const tids = tasks.filter(function(x){ return x.workplaceId === id; }).map(function(x){ return x.id; });
           for (const tid of tids) await del(t.objectStore('tasks'), tid);
           const idx = t.objectStore('photos').index('taskId');
           for (const tid of tids) {
@@ -594,7 +594,7 @@
         },
         async saveAssessment(workplaceId, statuses){
           const db = await openDb();
-          const rec = { workplaceId, statuses:statuses||{}, savedAt:Date.now() };
+          const rec = { workplaceId:workplaceId, statuses:statuses||{}, savedAt:Date.now() };
           if (useMemory) { mem.assessments.set(workplaceId, rec); return; }
           await put(tx(db, ['assessments'], 'readwrite').objectStore('assessments'), rec);
         },
@@ -606,17 +606,18 @@
         async cancelAssessmentForWorkplace(workplaceId){
           await this.deleteAssessment(workplaceId);
           const tasks = await this.listTasks();
-          for (const t of tasks.filter(x=>x.workplaceId===workplaceId)){
+          for (const t of tasks.filter(function(x){ return x.workplaceId===workplaceId; })){
             await this.deleteTask(t.id); // zmaže aj fotky danej úlohy
           }
         },
 
-        async listTasks(filter={}){
+        async listTasks(filter){
+          filter = filter || {};
           const db = await openDb();
           const status = filter.status || '';
           if (useMemory) {
-            const arr = [...mem.tasks];
-            return status ? arr.filter(t => t.status === status) : arr;
+            const arr = mem.tasks.slice();
+            return status ? arr.filter(function(t){ return t.status === status; }) : arr;
           }
           const s = tx(db, ['tasks'], 'readonly').objectStore('tasks');
           return status ? await getIndexAll(s.index('status'), status) : await getAll(s);
@@ -624,17 +625,17 @@
         async addTask(task){
           const db = await openDb();
           const rec = { workplaceId:task.workplaceId, topicKey:task.topicKey, responsible:task.responsible||'', dueDate:task.dueDate||null, status:task.status||'Otvorená', createdAt:Date.now() };
-          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id,...rec}); return id; }
+          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id:id, workplaceId:rec.workplaceId, topicKey:rec.topicKey, responsible:rec.responsible, dueDate:rec.dueDate, status:rec.status, createdAt:rec.createdAt}); return id; }
           return await add(tx(db,['tasks'],'readwrite').objectStore('tasks'), rec);
         },
         async updateTask(task){
           const db = await openDb();
-          if (useMemory) { const i=mem.tasks.findIndex(x=>x.id===task.id); if(i>=0) mem.tasks[i]={...mem.tasks[i],...task}; return; }
+          if (useMemory) { const i=mem.tasks.findIndex(function(x){ return x.id===task.id; }); if(i>=0) mem.tasks[i]=Object.assign({}, mem.tasks[i], task); return; }
           await put(tx(db,['tasks'],'readwrite').objectStore('tasks'), task);
         },
         async deleteTask(id){
           const db = await openDb();
-          if (useMemory) { mem.tasks = mem.tasks.filter(t => t.id!==id); mem.photos = mem.photos.filter(p => p.taskId!==id); return; }
+          if (useMemory) { mem.tasks = mem.tasks.filter(function(t){ return t.id!==id; }); mem.photos = mem.photos.filter(function(p){ return p.taskId!==id; }); return; }
           await del(tx(db,['tasks'],'readwrite').objectStore('tasks'), id);
           const t = tx(db,['photos'],'readwrite'); const idx=t.objectStore('photos').index('taskId'); const ph=await getIndexAll(idx,id);
           for (const p of ph) await del(t.objectStore('photos'), p.id);
@@ -642,39 +643,39 @@
 
         async addPhoto(taskId, workplaceId, topicKey, file){
           const db = await openDb();
-          let type = file?.type || 'application/octet-stream';
-          let size = file?.size || 0;
-          const name = file?.name || 'photo';
+          let type = (file && file.type) ? file.type : 'application/octet-stream';
+          let size = (file && file.size) ? file.size : 0;
+          const name = (file && file.name) ? file.name : 'photo';
           let blob;
-          try { const buf = await file.arrayBuffer(); blob = new Blob([buf], { type }); }
-          catch { blob = file || new Blob([], { type }); }
-          const rec = { taskId, workplaceId:workplaceId||null, topicKey:topicKey||null, name, type, size, blob, createdAt:Date.now(), remoteUrl:null, remoteSha:null, uploadedAt:null };
-          if (useMemory) { const id=mem.ids.photo++; mem.photos.push({id,...rec}); return id; }
+          try { const buf = await file.arrayBuffer(); blob = new Blob([buf], { type:type }); }
+          catch { blob = file || new Blob([], { type:type }); }
+          const rec = { taskId:taskId, workplaceId:workplaceId||null, topicKey:topicKey||null, name:name, type:type, size:size, blob:blob, createdAt:Date.now(), remoteUrl:null, remoteSha:null, uploadedAt:null };
+          if (useMemory) { const id=mem.ids.photo++; mem.photos.push({id:id, taskId:rec.taskId, workplaceId:rec.workplaceId, topicKey:rec.topicKey, name:rec.name, type:rec.type, size:rec.size, blob:rec.blob, createdAt:rec.createdAt, remoteUrl:null, remoteSha:null, uploadedAt:null }); return id; }
           return await add(tx(db,['photos'],'readwrite').objectStore('photos'), rec);
         },
         async listPhotosByTask(taskId){
-          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).sort((a,b)=>a.createdAt-b.createdAt);
+          const db = await openDb(); if (useMemory) return mem.photos.filter(function(p){ return p.taskId===taskId; }).sort(function(a,b){ return a.createdAt-b.createdAt; });
           const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId');
           const arr = await getIndexAll(idx, taskId);
-          return arr.sort((a,b)=>a.createdAt-b.createdAt);
+          return arr.sort(function(a,b){ return a.createdAt-b.createdAt; });
         },
         async countPhotosForTask(taskId){
-          const db = await openDb(); if (useMemory) return mem.photos.filter(p=>p.taskId===taskId).length;
+          const db = await openDb(); if (useMemory) return mem.photos.filter(function(p){ return p.taskId===taskId; }).length;
           const idx = tx(db,['photos'],'readonly').objectStore('photos').index('taskId'); const arr=await getIndexAll(idx, taskId); return arr.length;
         },
         async updatePhoto(photo){
           const db = await openDb();
-          if (useMemory) { const i=mem.photos.findIndex(x=>x.id===photo.id); if(i>=0) mem.photos[i]={...mem.photos[i],...photo}; return; }
+          if (useMemory) { const i=mem.photos.findIndex(function(x){ return x.id===photo.id; }); if(i>=0) mem.photos[i]=Object.assign({}, mem.photos[i], photo); return; }
           await put(tx(db,['photos'],'readwrite').objectStore('photos'), photo);
         },
         async getPhoto(id){
           const db = await openDb();
-          if (useMemory) return mem.photos.find(p=>p.id===id)||null;
+          if (useMemory) return mem.photos.find(function(p){ return p.id===id; })||null;
           return await getByKey(tx(db,['photos'],'readonly').objectStore('photos'), id);
         },
         async listAllPhotos(){
           const db = await openDb();
-          if (useMemory) return [...mem.photos];
+          if (useMemory) return mem.photos.slice();
           return await getAll(tx(db,['photos'],'readonly').objectStore('photos'));
         },
 
@@ -684,13 +685,15 @@
           const assessments = [];
           for (const w of workplaces) { const a = await this.getAssessment(w.id); if (a) assessments.push(a); }
           const photos = await this.listAllPhotos();
-          const photosLight = photos.map(p => ({
-            id: p.id, taskId: p.taskId, workplaceId: p.workplaceId, topicKey: p.topicKey,
-            name: p.name, type: p.type, size: p.size, createdAt: p.createdAt,
-            remoteUrl: p.remoteUrl || null
-          }));
+          const photosLight = photos.map(function(p){
+            return {
+              id: p.id, taskId: p.taskId, workplaceId: p.workplaceId, topicKey: p.topicKey,
+              name: p.name, type: p.type, size: p.size, createdAt: p.createdAt,
+              remoteUrl: p.remoteUrl || null
+            };
+          });
           const meta = { version: 3, updatedAt: Date.now() };
-          return { meta, workplaces, tasks, assessments, photos: photosLight };
+          return { meta:meta, workplaces:workplaces, tasks:tasks, assessments:assessments, photos:photosLight };
         },
 
         async importJSON(data){
@@ -701,14 +704,16 @@
           const srcP = data.photos || [];
 
           if (useMemory) {
-            mem.workplaces = srcW.map(w=>({...w}));
-            mem.assessments = new Map(); for (const a of srcA) mem.assessments.set(a.workplaceId, {...a});
-            mem.tasks = srcT.map(t=>({...t}));
-            mem.photos = srcP.map(p=>({ id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null }));
-            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(w=>w.id))||0)+1;
-            mem.ids.task = (Math.max(0, ...mem.tasks.map(t=>t.id))||0)+1;
-            mem.ids.photo = (Math.max(0, ...mem.photos.map(p=>p.id))||0)+1;
-            try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
+            mem.workplaces = srcW.map(function(w){ return Object.assign({}, w); });
+            mem.assessments = new Map(); for (const a of srcA) mem.assessments.set(a.workplaceId, Object.assign({}, a));
+            mem.tasks = srcT.map(function(t){ return Object.assign({}, t); });
+            mem.photos = srcP.map(function(p){
+              return { id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null };
+            });
+            mem.ids.workplace = (Math.max(0, ...mem.workplaces.map(function(w){ return w.id; }))||0)+1;
+            mem.ids.task = (Math.max(0, ...mem.tasks.map(function(t){ return t.id; }))||0)+1;
+            mem.ids.photo = (Math.max(0, ...mem.photos.map(function(p){ return p.id; }))||0)+1;
+            try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String((data && data.meta && data.meta.updatedAt) || Date.now())); } catch {}
             return;
           }
 
@@ -731,7 +736,7 @@
               await put(pS, { id:p.id, taskId:p.taskId, workplaceId:p.workplaceId||null, topicKey:p.topicKey||null, name:p.name, type:p.type||'image/*', size:p.size||0, blob:null, createdAt:p.createdAt||Date.now(), remoteUrl:p.remoteUrl||null, remoteSha:null, uploadedAt:null });
             }
           }
-          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt || Date.now())); } catch {}
+          try { localStorage.setItem(LS_REMOTE_UPDATED_AT, String((data && data.meta && data.meta.updatedAt) || Date.now())); } catch {}
         }
       };
     })();
@@ -740,28 +745,27 @@
   <!-- Charts helper -->
   <script>
     (function(){
-      // Stabilné kľúče (keys) – krátke slugs. name = dlhý popis; chartLabel = skrátený názov pre graf.
+      // Stabilné kľúče (keys) – name = dlhý popis; chartLabel = skrátený názov pre graf.
       const CHART_TOPICS = [
-        { key:'ovladacie_panely', chartLabel:'Ovládacie panely', name:`Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy` },
-        { key:'suporty', chartLabel:'Suporty', name:`Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)` },
-        { key:'koncove_spinace', chartLabel:'Koncové spínače', name:`Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené` },
-        { key:'zlaby_listy', chartLabel:'Žľaby, lišty', name:`Žľaby, lišty, výstupné pásy sú nevhodne konštruované
-Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
-        { key:'zaseknute_diely', chartLabel:'Zaseknuté diely', name:`Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)` },
-        { key:'zakonne_skolenia_podnikove', chartLabel:'Zákonné školenia', name:`Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)` },
-        { key:'matica_kvalifikacie', chartLabel:'Matica kvalifikácie', name:`Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané` },
-        { key:'skoliace_materialy_nnos', chartLabel:'Školiace mat. (NnOS)', name:`Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických)` },
-        { key:'postupy_pretypovania', chartLabel:'Postupy pretypovania', name:`Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania` },
-        { key:'cistiace_inspekcne_plany', chartLabel:'Čistenie/inspekcie', name:`Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaný správny postup kontroly bezpečnostných koncových spínačov` },
-        { key:'analyza_rizik', chartLabel:'Analýza rizík', name:`Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách` },
-        { key:'kontrolne_mechanizmy', chartLabel:'Kontrolné mechanizmy', name:`Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce)` },
-        { key:'revizia_pracoviska_ce', chartLabel:'Revízia pracoviska (CE)', name:`Neodbornými zásahmi (PDCA, IF..) do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE)` },
-        { key:'prebierka_stroja', chartLabel:'Prebierka stroja', name:`Dochádza k produkovaniu na strojoch, ktoré nemajú vykonanú prebierku stroja` }
+        { key:'ovladacie_panely', chartLabel:'Ovládacie panely', name:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy' },
+        { key:'suporty', chartLabel:'Suporty', name:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)' },
+        { key:'koncove_spinace', chartLabel:'Koncové spínače', name:'Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené' },
+        { key:'zlaby_listy', chartLabel:'Žľaby, lišty', name:'Žľaby, lišty, výstupné pásy sú nevhodne konštruované; pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“' },
+        { key:'zaseknute_diely', chartLabel:'Zaseknuté diely', name:'Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)' },
+        { key:'zakonne_skolenia_podnikove', chartLabel:'Zákonné školenia', name:'Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)' },
+        { key:'matica_kvalifikacie', chartLabel:'Matica kvalifikácie', name:'Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané' },
+        { key:'skoliace_materialy_nnos', chartLabel:'Školiace mat. (NnOS)', name:'Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických)' },
+        { key:'postupy_pretypovania', chartLabel:'Postupy pretypovania', name:'Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania' },
+        { key:'cistiace_inspekcne_plany', chartLabel:'Čistenie/inspekcie', name:'Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaný správny postup kontroly bezpečnostných koncových spínačov' },
+        { key:'analyza_rizik', chartLabel:'Analýza rizík', name:'Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách' },
+        { key:'kontrolne_mechanizmy', chartLabel:'Kontrolné mechanizmy', name:'Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce)' },
+        { key:'revizia_pracoviska_ce', chartLabel:'Revízia pracoviska (CE)', name:'Neodbornými zásahmi (PDCA, IF..) do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE)' },
+        { key:'prebierka_stroja', chartLabel:'Prebierka stroja', name:'Dochádza k produkovaniu na strojoch, ktoré nemajú vykonanú prebierku stroja' }
       ];
-      let chartPie=null, chartBar=null;
+      var chartPie=null, chartBar=null;
 
       function renderPie(ioCount, nioCount){
-        const ctx=document.getElementById('chart-io-nio').getContext('2d');
+        var ctx=document.getElementById('chart-io-nio').getContext('2d');
         if(chartPie) chartPie.destroy();
         chartPie=new Chart(ctx,{
           type:'pie',
@@ -779,15 +783,15 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       }
 
       function renderBar(topicNioCounts){
-        const ctx=document.getElementById('chart-topics-nio').getContext('2d');
+        var ctx=document.getElementById('chart-topics-nio').getContext('2d');
         if(chartBar) chartBar.destroy();
         chartBar=new Chart(ctx,{
           type:'bar',
           data:{
-            labels:CHART_TOPICS.map(t=>t.chartLabel || t.name),
+            labels:CHART_TOPICS.map(function(t){ return t.chartLabel || t.name; }),
             datasets:[{
               label:'Počet NIO',
-              data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),
+              data:CHART_TOPICS.map(function(t){ return topicNioCounts[t.key]||0; }),
               backgroundColor:'rgb(29,155,178)',
               borderColor:'rgb(0,0,0)',
               borderWidth:1
@@ -803,12 +807,12 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
               legend:{ position:'bottom' },
               tooltip:{
                 callbacks:{
-                  title(items){
-                    const i = items?.[0]?.dataIndex ?? 0;
-                    return CHART_TOPICS[i]?.name || items?.[0]?.label || '';
+                  title:function(items){
+                    var i = (items && items[0] && typeof items[0].dataIndex==='number') ? items[0].dataIndex : 0;
+                    return (CHART_TOPICS[i] && CHART_TOPICS[i].name) ? CHART_TOPICS[i].name : (items && items[0] && items[0].label ? items[0].label : '');
                   },
-                  label(ctx){
-                    return `Počet NIO: ${ctx.parsed.y}`;
+                  label:function(ctx){
+                    return 'Počet NIO: ' + ctx.parsed.y;
                   }
                 }
               }
@@ -817,9 +821,10 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         });
       }
 
-      window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
+      window.Charts = { renderPie: renderPie, renderBar: renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
+
   <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
@@ -1005,21 +1010,21 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         const data=[];
         for (const w of workplaces){
           const a = await DB.getAssessment(w.id);
-          const percent = (()=>{
+          const percent = (function(){
             if (!a||!a.statuses) return 0;
-            let io=0,nio=0; Object.values(a.statuses).forEach(v=>{ if(v==='IO') io++; else if(v==='NIO') nio++; });
+            let io=0,nio=0; Object.values(a.statuses).forEach(function(v){ if(v==='IO') io++; else if(v==='NIO') nio++; });
             const tot=io+nio; return tot>0?Math.round(io/tot*100):0;
           })();
-          data.push({ ...w, status:(percent>0 || (a&&Object.keys(a.statuses||{}).length>0))?'Hodnotené':'Neohodnotené', ioPercent:percent });
+          data.push({ id:w.id, segment:w.segment, costCenter:w.costCenter, equipment:w.equipment, machineName:w.machineName, status:(percent>0 || (a&&Object.keys(a.statuses||{}).length>0))?'Hodnotené':'Neohodnotené', ioPercent:percent });
         }
 
         const filtered = data.filter(w=>{
-          const hay = `${w.segment} ${w.costCenter} ${w.equipment} ${w.machineName}`.toLowerCase();
-          if (q && !hay.includes(q)) return false;
-          if (fSeg && !String(w.segment).toLowerCase().includes(fSeg)) return false;
-          if (fCc && !String(w.costCenter).toLowerCase().includes(fCc)) return false;
-          if (fEq && !String(w.equipment).toLowerCase().includes(fEq)) return false;
-          if (fMa && !String(w.machineName).toLowerCase().includes(fMa)) return false;
+          const hay = (w.segment+' '+w.costCenter+' '+w.equipment+' '+w.machineName).toLowerCase();
+          if (q && hay.indexOf(q)===-1) return false;
+          if (fSeg && String(w.segment).toLowerCase().indexOf(fSeg)===-1) return false;
+          if (fCc && String(w.costCenter).toLowerCase().indexOf(fCc)===-1) return false;
+          if (fEq && String(w.equipment).toLowerCase().indexOf(fEq)===-1) return false;
+          if (fMa && String(w.machineName).toLowerCase().indexOf(fMa)===-1) return false;
           if (fSt && w.status!==fSt) return false;
           if (!isNaN(fIoMin) && w.ioPercent < fIoMin) return false;
           return true;
@@ -1083,7 +1088,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
 
       async function exportWorkplacesCSV(){
         const ws = await DB.listWorkplaces();
-      const rows = ws.map(w=>({ Segment:w.segment, 'Nákladové stredisko':w.costCenter, Equipment:w.equipment, 'Názov stroja':w.machineName }));
+        const rows = ws.map(w=>({ Segment:w.segment, 'Nákladové stredisko':w.costCenter, Equipment:w.equipment, 'Názov stroja':w.machineName }));
         const csv = toCSV(rows, ['Segment','Nákladové stredisko','Equipment','Názov stroja']);
         downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'pracoviska.csv');
       }
@@ -1106,7 +1111,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
           for(const r of rows){
             const segment=String(r[0]||'').trim(), costCenter=String(r[1]||'').trim(), equipment=String(r[2]||'').trim(), machineName=String(r[3]||'').trim();
             if(!segment||!costCenter||!equipment||!machineName) continue;
-            await DB.addWorkplace({segment,costCenter,equipment,machineName}); imported++;
+            await DB.addWorkplace({segment:segment,costCenter:costCenter,equipment:equipment,machineName:machineName}); imported++;
           }
           status.textContent=`Importovaných pracovísk: ${imported}`; f.value='';
           await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard();
@@ -1167,7 +1172,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1182,7 +1187,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
 
         fileInp.addEventListener('change', async ()=>{
           const files=Array.from(fileInp.files||[]); if(files.length>5){ alert('Maximálne 5 fotiek na tému.'); fileInp.value=''; return; }
-          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src=url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
+          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
         });
 
         card.append(header,body);
@@ -1215,7 +1220,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
             const responsible=(document.getElementById(`resp-${topic.key}`).value||'').trim();
             const dueDate=document.getElementById(`due-${topic.key}`).value ? new Date(document.getElementById(`due-${topic.key}`).value).getTime() : null;
             const files=Array.from(document.getElementById(`file-${topic.key}`).files||[]);
-            nioData[topic.key]={ responsible, dueDate, files };
+            nioData[topic.key]={ responsible:responsible, dueDate:dueDate, files:files };
           }
         }
 
@@ -1225,7 +1230,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         for(const[topicKey, info] of Object.entries(nioData)){
           let task=existingTasks.find(t=>t.workplaceId===workplaceId && t.topicKey===topicKey);
           let taskId;
-          if(!task){ taskId=await DB.addTask({workplaceId, topicKey, responsible:info.responsible, dueDate:info.dueDate, status:'Otvorená'}); }
+          if(!task){ taskId=await DB.addTask({workplaceId:workplaceId, topicKey:topicKey, responsible:info.responsible, dueDate:info.dueDate, status:'Otvorená'}); }
           else { task.responsible=info.responsible; task.dueDate=info.dueDate; await DB.updateTask(task); taskId=task.id; }
 
           const already=await DB.countPhotosForTask(taskId);
@@ -1257,7 +1262,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       async function reflectTaskStatusInAssessment(task){
         if(!task || !task.workplaceId || !task.topicKey) return;
         const current=await DB.getAssessment(task.workplaceId);
-        const statuses=(current?.statuses) ? {...current.statuses} : {};
+        const statuses=(current && current.statuses) ? Object.assign({}, current.statuses) : {};
         statuses[task.topicKey] = (task.status === 'Splnená') ? 'IO' : 'NIO';
         await DB.saveAssessment(task.workplaceId, statuses);
       }
@@ -1268,7 +1273,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         const seg=document.getElementById('filter-task-segment').value;
         const cc=document.getElementById('filter-task-costcenter').value;
 
-        const tasks=await DB.listTasks({status}); const workplaces=await DB.listWorkplaces(); const wpMap=new Map(workplaces.map(w=>[w.id,w]));
+        const tasks=await DB.listTasks({status:status}); const workplaces=await DB.listWorkplaces(); const wpMap=new Map(workplaces.map(w=>[w.id,w]));
 
         tasks
         .filter(t=>{ const w=wpMap.get(t.workplaceId); if(!w) return false; const okSeg=!seg||w.segment===seg; const okCc=!cc||w.costCenter===cc; return okSeg&&okCc; })
@@ -1392,27 +1397,47 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       }
 
       /* Cloud (Gist) + GitHub repo (fotky) */
-      function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
-      function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
-      function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
+      function authHeader(tk){
+        const t=(tk||'').trim();
+        if (t.indexOf('github_pat_')===0) return 'Bearer ' + t;
+        return 'token ' + t;
+      }
+      function githubHeaders(hasJson){
+        const h={'Authorization':authHeader(syncCreds && syncCreds.token || ''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+        if(hasJson) h['Content-Type']='application/json';
+        return h;
+      }
+      function githubHeadersWithToken(token,hasJson){
+        const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+        if(hasJson) h['Content-Type']='application/json';
+        return h;
+      }
       function setCloudState(msg){ document.getElementById('cloudState').textContent=msg; }
 
       function loadSyncCreds(){
         try{ syncCreds=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); }catch{ syncCreds=null; }
-        const idTxt=syncCreds?.gistId?(syncCreds.gistId.slice(0,8)+'…'):'—';
-        const repoTxt=(syncCreds?.repoOwner&&syncCreds?.repoName)?`${syncCreds.repoOwner}/${syncCreds.repoName}`:'—';
-        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —'));
+        const idTxt=(syncCreds && syncCreds.gistId)?(syncCreds.gistId.slice(0,8)+'…'):'—';
+        const repoTxt=(syncCreds && syncCreds.repoOwner && syncCreds.repoName)?(syncCreds.repoOwner+'/'+syncCreds.repoName):'—';
+        setCloudState(((syncCreds && syncCreds.gistId)?('Gist '+idTxt):'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —'));
       }
       function saveSyncCreds(creds){
-        syncCreds={ gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), repoOwner:(creds.repoOwner||'').trim(), repoName:(creds.repoName||'').trim(), repoBranch:(creds.repoBranch||'main').trim(), repoFolder:(creds.repoFolder||'bozp-photos').trim() };
+        syncCreds={
+          gistId:(creds.gistId||'').trim(),
+          token:(creds.token||'').trim(),
+          repoOwner:(creds.repoOwner||'').trim(),
+          repoName:(creds.repoName||'').trim(),
+          repoBranch:(creds.repoBranch||'main').trim(),
+          repoFolder:(creds.repoFolder||'bozp-photos').trim()
+        };
         localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(syncCreds));
         loadSyncCreds();
       }
       function clearSyncCreds(){ localStorage.removeItem(LS_SYNC_CREDS_KEY); syncCreds=null; loadSyncCreds(); }
 
-      function toggleCloudPopup(show=null){
+      function toggleCloudPopup(show){
         const pop=document.getElementById('cloudPopup'); const isShown=!pop.hasAttribute('hidden');
-        const next=(show===null)?!isShown:show; if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
+        const next=(typeof show==='undefined')?!isShown:!!show;
+        if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
       }
 
       async function githubGetGist(id){
@@ -1422,22 +1447,22 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       }
 
       async function cloudCheckRate(){
-        if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
+        if(!(syncCreds && syncCreds.token)){ alert('Cloud: chýba token.'); return; }
         try{
           const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)});
           const j=await res.json();
-          const core=j?.resources?.core;
-          const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
-          alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
-        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
+          const core=j && j.resources && j.resources.core ? j.resources.core : null;
+          const resetTxt=core && core.reset ? new Date(core.reset*1000).toLocaleString('sk-SK') : '—';
+          alert(`API limit: ${(core && core.remaining)||0}/${(core && core.limit)||0} • reset: ${resetTxt}`);
+        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err && err.message || err)); }
       }
 
       async function cloudLoad(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        if(!(syncCreds && syncCreds.gistId) || !(syncCreds && syncCreds.token)){ alert('Cloud: chýba ID alebo Token.'); return; }
         try{
           setCloudState('Načítavam…');
           const j=await githubGetGist(syncCreds.gistId);
-          let file=j?.files?.[GIST_FILE_NAME];
+          let file=j && j.files ? j.files[GIST_FILE_NAME] : null;
           if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
           let contentStr=file.content;
           if(!contentStr && file.raw_url){
@@ -1445,19 +1470,19 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
             contentStr=await rawRes.text();
           }
           const data=JSON.parse(contentStr); await DB.importJSON(data);
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String((data && data.meta && data.meta.updatedAt) || Date.now())); }catch{}
           setCloudState('Načítané');
           await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
-        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err && err.message || err)); setCloudState('Chyba načítania'); }
       }
 
       // GitHub Contents API helpers
-      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
+      function encodePathSegments(path){ return String(path||'').split('/').map(function(seg){ return encodeURIComponent(seg); }).join('/'); }
       function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
       function buildPhotoPath(photo, fileName){
-        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
-        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
-        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
+        const root=((syncCreds && syncCreds.repoFolder) ? syncCreds.repoFolder : 'bozp-photos').replace(/^\/+|\/+$/g,'');
+        const wp=photo.workplaceId?('workplace-'+photo.workplaceId):'workplace-unknown';
+        const tk=photo.taskId?('task-'+photo.taskId):'task-unknown';
         return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
       }
       async function listContents(owner, repo, path, branch){
@@ -1472,10 +1497,10 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       async function getFileSha(owner, repo, path, branch){
         const items=await listContents(owner, repo, path, branch);
         const file=items && items[0] && items[0].type==='file' ? items[0] : null;
-        return file ? file.sha || null : null;
+        return file ? (file.sha || null) : null;
       }
       function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
-      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
+      async function putFile(owner, repo, path, base64Content, message, branch, sha){
         const safePath=encodePathSegments(path);
         const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
         const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
@@ -1486,21 +1511,21 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
 
       async function tryUploadPhoto(photoId){
         try{
-          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
+          if(!(syncCreds && syncCreds.token) || !(syncCreds && syncCreds.repoOwner) || !(syncCreds && syncCreds.repoName)) return;
           const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
           const path=buildPhotoPath(p, p.name);
           const base64=bufToBase64(await p.blob.arrayBuffer());
-          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
-          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
-          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
+          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, (syncCreds && syncCreds.repoBranch) || 'main');
+          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, (syncCreds && syncCreds.repoBranch) || 'main', sha);
+          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent((syncCreds && syncCreds.repoBranch) || 'main')}/${res.content.path}`;
           p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
           await DB.updatePhoto(p);
           try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
-        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
+        }catch(err){ console.warn('Upload fotky zlyhal:', err && err.message || err); }
       }
 
       async function uploadPendingPhotos(){
-        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
+        if(!(syncCreds && syncCreds.token) || !(syncCreds && syncCreds.repoOwner) || !(syncCreds && syncCreds.repoName)){ alert('Nastav GitHub repo a token.'); return; }
         const all=await DB.listAllPhotos();
         const pending=all.filter(p=>!p.remoteUrl && p.blob);
         if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
@@ -1516,9 +1541,9 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         return m ? Number(m[1]) : null;
       }
       async function resyncPhotosFromRepo(){
-        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ console.warn('Cloud: repo kredencialy nie sú nastavené, preskakujem resync fotiek.'); return; }
-        const owner=syncCreds.repoOwner, repo=syncCreds.repoName, branch=syncCreds.repoBranch||'main';
-        const root=(syncCreds.repoFolder||'bozp-photos').replace(/^\/+|\/+$/g,'');
+        if(!(syncCreds && syncCreds.token) || !(syncCreds && syncCreds.repoOwner) || !(syncCreds && syncCreds.repoName)){ console.warn('Cloud: repo kredencialy nie sú nastavené, preskakujem resync fotiek.'); return; }
+        const owner=syncCreds.repoOwner, repo=syncCreds.repoName, branch=(syncCreds && syncCreds.repoBranch)||'main';
+        const root=((syncCreds && syncCreds.repoFolder)||'bozp-photos').replace(/^\/+|\/+$/g,'');
         try{
           const current=await DB.listAllPhotos();
           const existingUrls=new Set(current.map(p=>p.remoteUrl).filter(Boolean));
@@ -1543,22 +1568,22 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
             }
           }
         }catch(err){
-          console.warn('Resync fotiek z repo zlyhal:', err?.message||err);
+          console.warn('Resync fotiek z repo zlyhal:', err && err.message || err);
         }
       }
 
       async function cloudSave(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
+        if(!(syncCreds && syncCreds.gistId) || !(syncCreds && syncCreds.token)){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
         try{
           setCloudState('Ukladám…');
           const payload=await DB.exportJSON();
           const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
-          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
+          const body={ files:{} }; body.files[GIST_FILE_NAME]={ content: JSON.stringify(payload,null,2) };
           const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
           if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
           try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
           setCloudState('Uložené');
-        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
+        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err && err.message || err)); setCloudState('Chyba ukladania'); }
       }
 
       async function cloudRefresh(){
@@ -1606,12 +1631,12 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         });
 
         cloudCreateGist.addEventListener('click',async()=>{
-          const tk=cloudTokenInput.value.trim()||syncCreds?.token||''; if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
+          const tk=cloudTokenInput.value.trim()||(syncCreds && syncCreds.token)||''; if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
           try{
             const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
             const res=await fetch('https://api.github.com/gists',{method:'POST',headers:githubHeadersWithToken(tk,true),body:JSON.stringify({description:'BOZP Workspace',public:false,files:{[GIST_FILE_NAME]:{content:payloadStr}}})});
             if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
-            const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
+            const j=await res.json(); cloudGistIdInput.value=j && j.id || ''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j && j.id || '—');
           }catch(err){ showCloudError(err.message); }
         });
 
