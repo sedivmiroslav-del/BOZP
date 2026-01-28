@@ -53,7 +53,6 @@
     .app-nav a { color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 8px; }
     .app-nav a:hover, .app-nav a[aria-current="page"] { background: rgba(255,255,255,0.2); }
 
-    /* Cloud akcie v hornej lište – už iba Obnoviť */
     .header-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .header-actions .btn { background:#fff; color:#000; border:1px solid var(--light-gray); }
     .header-actions .btn:hover { background: rgb(246,251,253); }
@@ -100,7 +99,6 @@
 
     .chart-section { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
 
-    /* Témy pod sebou (1 stĺpec) */
     .assessment-form .topics-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
     .topic-card { border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; background: var(--white); }
     .topic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -187,9 +185,9 @@
       user-select:none; -webkit-user-drag:none;
       will-change: transform;
       transform-origin: center center;
-      max-width:none; max-height:none; /* skaluje sa výlučne cez transform */
+      max-width:none; max-height:none;
       cursor: grab;
-      visibility:hidden; /* skryté, kým sa nenastaví prispôsobenie */
+      /* už žiadne visibility:hidden – zobrazí sa po dekódovaní */
     }
     .imgToolBtn{
       padding:6px 10px; border:1px solid var(--light-gray); border-radius:8px;
@@ -1247,7 +1245,7 @@
         const respInp=createEl('input',{id:`resp-${topic.key}`,type:'text',placeholder:'Meno priezvisko'});
         const dueLbl=createEl('label',{for:`due-${topic.key}`}); dueLbl.textContent='Termín';
         const dueInp=createEl('input',{id:`due-${topic.key}`,type:'date'});
-        const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
+        const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textcontent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
@@ -1515,25 +1513,7 @@
         }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
       }
 
-      async function cloudLoad(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
-        try{
-          setCloudState('Načítavam…');
-          const j=await githubGetGist(syncCreds.gistId);
-          let file=j?.files?.[GIST_FILE_NAME];
-          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
-          let contentStr=file.content;
-          if(!contentStr && file.raw_url){
-            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
-            contentStr=await rawRes.text();
-          }
-          const data=JSON.parse(contentStr); await DB.importJSON(data);
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
-          setCloudState('Načítané');
-          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
-        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
-      }
-
+      // Contents API helpers
       function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
       function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
       function buildPhotoPath(photo, fileName){
@@ -1651,6 +1631,25 @@
         }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
 
+      async function cloudLoad(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Načítavam…');
+          const j=await githubGetGist(syncCreds.gistId);
+          let file=j?.files?.[GIST_FILE_NAME];
+          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
+          let contentStr=file.content;
+          if(!contentStr && file.raw_url){
+            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
+            contentStr=await rawRes.text();
+          }
+          const data=JSON.parse(contentStr); await DB.importJSON(data);
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
+          setCloudState('Načítané');
+          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
+      }
+
       async function cloudRefresh(){
         await cloudLoad();
         await resyncPhotosFromRepo();
@@ -1681,7 +1680,6 @@
         }, { passive:false });
 
         viewer.img.addEventListener('dblclick', ()=>{
-          // toggle medzi fit a 100%
           if (Math.abs(viewer.scale - viewer.fitScale) < 0.01) setExactScale(1);
           else fitToWindow();
         });
@@ -1699,7 +1697,6 @@
           viewer.tx += dx; viewer.ty += dy; updateViewerTransform();
         });
 
-        // Touch drag
         viewer.img.addEventListener('touchstart', (e)=>{
           if(e.touches.length===1){ viewer.isDragging=true; viewer.lastX=e.touches[0].clientX; viewer.lastY=e.touches[0].clientY; }
         }, {passive:true});
@@ -1713,7 +1710,6 @@
         }, {passive:true});
         viewer.img.addEventListener('touchend', ()=>{ viewer.isDragging=false; }, {passive:true});
 
-        // Keyboard helpers
         document.addEventListener('keydown', (e)=>{
           if(viewer.overlay.getAttribute('aria-hidden')==='true') return;
           if(e.key==='+') setViewerScale(viewer.scale*1.2);
@@ -1739,10 +1735,10 @@
         const bh = viewer.body.clientHeight;
         const iw = viewer.img.naturalWidth || viewer.img.width;
         const ih = viewer.img.naturalHeight || viewer.img.height;
+        if (!iw || !ih) return; // ešte neznáme rozmery
         const fit = Math.min(bw/iw, bh/ih);
         viewer.fitScale = fit;
         viewer.scale = fit;
-        // centrovanie
         viewer.tx = (bw - iw*fit)/2;
         viewer.ty = (bh - ih*fit)/2;
         updateViewerTransform();
@@ -1758,24 +1754,27 @@
       }
       function updateViewerTransform(){
         viewer.img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`;
-        viewer.img.style.visibility='visible';
       }
       function openImageViewer(src, alt){
-        viewer.img.style.visibility='hidden';
-        viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
         viewer.overlay.setAttribute('aria-hidden','false');
-        // počkaj na načítanie, potom prispôsob
-        const ready = ()=>{
-          viewer.img.removeEventListener('load', ready);
-          fitToWindow();
-        };
-        viewer.img.addEventListener('load', ready);
-        // ak už je v cache, load nemusí prísť – fallback
-        if (viewer.img.complete && viewer.img.naturalWidth) { ready(); }
+        viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
+        viewer.scale=1; viewer.tx=0; viewer.ty=0;
+
+        // bezpečne počkaj na dekódovanie obrázka a až potom fit
+        const doFit = ()=>fitToWindow();
+        viewer.img.onerror = ()=>{ alert('Nepodarilo sa načítať fotku.'); closeImageViewer(); };
+
+        if (typeof viewer.img.decode === 'function') {
+          viewer.img.decode().then(doFit).catch(()=>{
+            viewer.img.addEventListener('load', doFit, {once:true});
+          });
+        } else {
+          viewer.img.addEventListener('load', doFit, {once:true});
+        }
       }
       function closeImageViewer(){
         viewer.overlay.setAttribute('aria-hidden','true');
-        viewer.img.src=''; viewer.img.style.visibility='hidden';
+        viewer.img.src='';
       }
 
       window.openImageViewer = openImageViewer;
