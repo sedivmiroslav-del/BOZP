@@ -113,7 +113,40 @@
 
     .app-footer { padding: 14px clamp(16px,4vw,32px); border-top: 1px solid var(--light-gray); color: var(--gray); background: rgba(206,213,218,.15); text-align: center; }
 
-    /* Modál fotiek – menšie náhľady */
+    /* Cloud Popup (spodný panel v Import/Export) */
+    .cloudWrap{position:relative}
+    #cloudBtn{position:relative}
+    #cloudPopup{position:relative;background:#fff;border:1px solid var(--light-gray);border-radius:10px;padding:10px;box-shadow:var(--shadow);min-width:320px;display:grid;gap:8px;color:#000;margin-top:10px}
+    #cloudPopup[hidden]{display:none}
+    .cloudRow{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .cloudRow .lbl{font-weight:600;color:#1f2937}
+    .cloudRow .val{color:#4b5563}
+    .cloudActions{display:flex;gap:6px;flex-wrap:wrap}
+    .cloudBtn{padding:6px 10px;border:1px solid var(--light-gray);border-radius:8px;background:#fff;cursor:pointer}
+    .cloudBtn:hover{background:#f3f4f6}
+    .smallNote{color:#555;font-size:12px}
+
+    /* Cloud Overlay (modal) – robustné prepínanie cez triedu .show */
+    .cloudOverlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.35);
+      display:none; align-items:center; justify-content:center; z-index:1000;
+    }
+    .cloudOverlay.show{ display:flex; }
+    .cloudModal{
+      width:min(680px,92vw); background:#fff; border:2px solid var(--light-gray);
+      border-radius:10px; box-shadow:var(--shadow); overflow:hidden; color:#000
+    }
+    .cloudHeader{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f7f8fa;border-bottom:2px solid var(--light-gray)}
+    .cloudBody{padding:12px;display:grid;gap:12px}
+    .cloudGrid{display:grid;gap:10px}
+    .cloudGrid .row{display:grid;grid-template-columns:180px 1fr;gap:8px;align-items:center}
+    .cloudGrid label{font-weight:600;color:#1f2937}
+    .cloudGrid input{width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px}
+    .cloudGrid input:focus{outline:none;box-shadow:0 0 0 3px rgba(161,200,97,.35);border-color:var(--lime)}
+    .cloudError{color:#b00020;background:#fdecee;border:1px solid #f5c2c7;border-radius:8px;padding:8px 10px;display:none}
+    .cloudError.show{display:block}
+
+    /* Modál fotiek */
     .modal[aria-hidden="true"]{display:none}
     .modal[aria-hidden="false"]{
       position:fixed; inset:0; background:rgba(0,0,0,.35);
@@ -130,11 +163,10 @@
     .modal-body{ padding:12px; display:flex; flex-wrap:wrap; gap:8px; }
     .modal-body img{
       width:120px; height:90px; object-fit:cover;
-      border:1px solid var(--light-gray); border-radius:8px;
-      cursor: zoom-in;
+      border:1px solid var(--light-gray); border-radius:8px; cursor: zoom-in;
     }
 
-    /* Image Viewer (zoom + fit) */
+    /* Image Viewer (fit/zoom) */
     .imgViewer[aria-hidden="true"]{display:none}
     .imgViewer[aria-hidden="false"]{
       position:fixed; inset:0; background:rgba(0,0,0,.7);
@@ -158,17 +190,12 @@
     .imgViewer-body img{
       user-select:none; -webkit-user-drag:none;
       transform-origin: center center;
-      max-width:none; max-height:none; /* v zoom režime bez limitov */
+      max-width:none; max-height:none;
       cursor: grab;
     }
-    /* fit režim – prispôsobenie oknu bez transform */
     .imgViewer-body img.fit{
-      max-width:100%;
-      max-height:100%;
-      width:auto;
-      height:auto;
-      transform:none !important;
-      cursor: zoom-in;
+      max-width:100%; max-height:100%; width:auto; height:auto;
+      transform:none !important; cursor: zoom-in;
     }
 
     @media (max-width: 980px) {
@@ -459,7 +486,7 @@
         </div>
       </div>
       <div id="imgViewerBody" class="imgViewer-body">
-        <img id="imgViewerImg" src="" alt="" crossOrigin="anonymous" />
+        <img id="imgViewerImg" src="" alt="" />
       </div>
     </div>
   </div>
@@ -518,9 +545,9 @@
       let useMemory = false;
       const mem = {
         workplaces: [],
-        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
+        assessments: new Map(),
         tasks: [],
-        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
+        photos: [],
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -867,7 +894,7 @@
         overlay: null, body: null, img: null,
         zoomInBtn: null, zoomOutBtn: null, resetBtn: null, closeBtn: null,
         scale: 1, tx: 0, ty: 0, isDragging: false, lastX: 0, lastY: 0,
-        mode: 'fit' // 'fit' | 'zoom'
+        mode: 'fit'
       };
 
       document.addEventListener('DOMContentLoaded', init);
@@ -960,7 +987,7 @@
         const total = ws.length;
         const assessed = assessments.filter(a => a && a.statuses && Object.keys(a.statuses).length>0).length;
         let io=0, nio=0;
-        const topicNioCounts={}; (window.Charts.TOPICS||[]).forEach(t=>topicNioCounts[t.key]=0);
+        const topicNioCounts={}; TOPICS_LIST.forEach(t=>topicNioCounts[t.key]=0);
         assessments.forEach(a=>{
           if (!a || !a.statuses) return;
           Object.entries(a.statuses).forEach(([key,val])=>{
@@ -1131,12 +1158,12 @@
           let rows=[];
           if(file.name.toLowerCase().endsWith('.csv')){
             const text=await file.text();
-            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v && v.trim().length>0));
+            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v a n d v.trim().length>0));
           }else{
             const data=new Uint8Array(await file.arrayBuffer());
             const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
             const arr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
-            rows=arr.filter(r=>r.length>=4 && r.some(v=>v && String(v).trim().length>0));
+            rows=arr.filter(r=>r.length>=4 a n d r.some(v=>v && String(v).trim().length>0));
           }
           let imported=0;
           for(const r of rows){
@@ -1174,7 +1201,7 @@
         const assessment=await DB.getAssessment(workplaceId);
         const statuses=assessment?.statuses || {};
         const c=document.getElementById('topics-container'); c.innerHTML='';
-        (window.Charts.TOPICS||[]).forEach(t=>c.appendChild(createTopicCard(t, statuses[t.key]||null, workplaceId)));
+        TOPICS_LIST.forEach(t=>c.appendChild(createTopicCard(t, statuses[t.key]||null, workplaceId)));
         document.getElementById('form-assessment').hidden=false;
       }
 
@@ -1225,7 +1252,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1254,10 +1281,9 @@
         for(const p of photos){
           let src=''; if(p.remoteUrl) src=p.remoteUrl; else if(p.blob) src=URL.createObjectURL(p.blob); else src='';
           if(!src) continue;
-          const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`});
+          const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`}); const name=createEl('span'); name.textContent=p.name;
           attachImgErrorCleanup(img, p, item);
           img.addEventListener('click', ()=> openImageViewer(src, `Fotka k téme (${topicKey})`));
-          const name=createEl('span'); name.textContent=p.name;
           item.append(img,name); photosWrap.appendChild(item);
         }
       }
@@ -1268,7 +1294,7 @@
         if(!workplaceId) return;
 
         const statuses={}; const nioData={};
-        for(const topic of (window.Charts.TOPICS||[])){
+        for(const topic of TOPICS_LIST){
           const stIO=document.getElementById(`io-${topic.key}`).checked;
           const stNIO=document.getElementById(`nio-${topic.key}`).checked;
           const st=stIO?'IO':(stNIO?'NIO':null);
@@ -1285,7 +1311,7 @@
 
         const existingTasks=await DB.listTasks();
         for(const[topicKey, info] of Object.entries(nioData)){
-          let task=existingTasks.find(t=>t.workplaceId===workplaceId && t.topicKey===topicKey);
+          let task=existingTasks.find(t=>t.workplaceId===workplaceId a n d t.topicKey===topicKey);
           let taskId;
           if(!task){ taskId=await DB.addTask({workplaceId, topicKey, responsible:info.responsible, dueDate:info.dueDate, status:'Otvorená'}); }
           else { task.responsible=info.responsible; task.dueDate=info.dueDate; await DB.updateTask(task); taskId=task.id; }
@@ -1337,7 +1363,7 @@
           const overdue=t.dueDate && t.status!=='Splnená' && t.dueDate<Date.now();
           tr.innerHTML=`
             <td>${w ? `${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}` : '-'}</td>
-            <td>${((window.Charts.TOPICS||[]).find(x=>x.key===t.topicKey)?.name) || t.topicKey}</td>
+            <td>${(TOPICS_LIST.find(x=>x.key===t.topicKey)?.name) || t.topicKey}</td>
             <td>${t.responsible || '-'}</td>
             <td>${fmtDate(t.dueDate)}</td>
             <td>
@@ -1379,7 +1405,7 @@
               const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
               if(!src) continue;
               const item=createEl('div',{}); 
-              const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`,crossOrigin:'anonymous'});
+              const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`});
               attachImgErrorCleanup(img, p, item);
               img.addEventListener('click', ()=> openImageViewer(src, `Fotka úlohy ${p.name}`));
               item.appendChild(img);
@@ -1421,7 +1447,7 @@
           const photosCount=await DB.countPhotosForTask(t.id);
           rows.push({
             Pracovisko:w?`${w.segment} | ${w.costCenter} | ${w.equipment} | ${w.machineName}`:'-',
-            Téma:((window.Charts.TOPICS||[]).find(x=>x.key===t.topicKey)?.name)||t.topicKey,
+            Téma:(TOPICS_LIST.find(x=>x.key===t.topicKey)?.name)||t.topicKey,
             Zodpovedný:t.responsible||'',
             Termín:fmtDate(t.dueDate),
             Stav:t.status,
@@ -1432,208 +1458,7 @@
         downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'ulohy.csv');
       }
 
-      function bindImportExport(){
-        document.getElementById('btn-export-json').addEventListener('click', async ()=>{
-          const data=await DB.exportJSON();
-          const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-          downloadBlob(blob,'bozp_export.json');
-        });
-
-        document.getElementById('btn-import-json').addEventListener('click', async ()=>{
-          const file=document.getElementById('file-import-json').files[0];
-          const status=document.getElementById('json-import-status'); status.textContent='';
-          if(!file){ status.textContent='Vyberte JSON súbor.'; return; }
-          try{
-            const text=await file.text(); const data=JSON.parse(text); await DB.importJSON(data); status.textContent='Import úspešný.';
-            await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
-          }catch(e){ console.error(e); status.textContent='Chybný JSON súbor.'; }
-        });
-      }
-
-      /* Cloud helpers */
-      function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
-      function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
-      function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
-      function setCloudState(msg){ document.getElementById('cloudState').textContent=msg; }
-
-      function loadSyncCreds(){
-        try{ syncCreds=JSON.parse(localStorage.getItem('bozpApp/cloudCreds')||'null'); }catch{ syncCreds=null; }
-        const idTxt=syncCreds?.gistId?(syncCreds.gistId.slice(0,8)+'…'):'—';
-        const repoTxt=(syncCreds?.repoOwner&&syncCreds?.repoName)?`${syncCreds.repoOwner}/${syncCreds.repoName}`:'—';
-        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —'));
-      }
-      function saveSyncCreds(creds){
-        syncCreds={ gistId:(creds.gistId||'').trim(), token:(creds.token||'').trim(), repoOwner:(creds.repoOwner||'').trim(), repoName:(creds.repoName||'').trim(), repoBranch:(creds.repoBranch||'main').trim(), repoFolder:(creds.repoFolder||'bozp-photos').trim() };
-        localStorage.setItem('bozpApp/cloudCreds', JSON.stringify(syncCreds));
-        loadSyncCreds();
-      }
-      function clearSyncCreds(){ localStorage.removeItem('bozpApp/cloudCreds'); syncCreds=null; loadSyncCreds(); }
-
-      function toggleCloudPopup(show=null){
-        const pop=document.getElementById('cloudPopup'); const isShown=!pop.hasAttribute('hidden');
-        const next=(show===null)?!isShown:show; if(next) pop.removeAttribute('hidden'); else pop.setAttribute('hidden','');
-      }
-
-      async function githubGetGist(id){
-        const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(id),{headers:githubHeaders(false)});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        return res.json();
-      }
-
-      async function cloudCheckRate(){
-        if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
-        try{
-          const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)});
-          const j=await res.json();
-          const core=j?.resources?.core;
-          const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
-          alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
-        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
-      }
-
-      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
-      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
-      function buildPhotoPath(photo, fileName){
-        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
-        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
-        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
-        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
-      }
-      async function listContents(owner, repo, path, branch){
-        const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,''));
-        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
-        const res=await fetch(url,{headers:githubHeaders(false)});
-        if(res.status===404) return [];
-        if(!res.ok) throw new Error('Get contents: HTTP '+res.status);
-        const j=await res.json();
-        return Array.isArray(j)?j:[j];
-      }
-      async function getFileSha(owner, repo, path, branch){
-        const items=await listContents(owner, repo, path, branch);
-        const file=items && items[0] && items[0].type==='file' ? items[0] : null;
-        return file ? file.sha || null : null;
-      }
-      function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
-      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
-        const safePath=encodePathSegments(path);
-        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
-        const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
-        const res=await fetch(url,{method:'PUT',headers:githubHeaders(true),body:JSON.stringify(body)});
-        if(!res.ok){ const txt=await res.text(); console.warn('PUT failed:',res.status,txt); throw new Error(`Upload zlyhal: ${res.status} ${txt}`); }
-        return res.json();
-      }
-
-      async function tryUploadPhoto(photoId){
-        try{
-          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
-          const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
-          const path=buildPhotoPath(p, p.name);
-          const base64=bufToBase64(await p.blob.arrayBuffer());
-          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
-          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
-          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
-          p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
-          await DB.updatePhoto(p);
-          try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
-        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
-      }
-
-      async function uploadPendingPhotos(){
-        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
-        const all=await DB.listAllPhotos();
-        const pending=all.filter(p=>!p.remoteUrl && p.blob);
-        if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
-        let ok=0,fail=0;
-        for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
-        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
-      }
-
-      function parseIdFromPrefixed(name, prefix){
-        const re=new RegExp(`^${prefix}-(\\d+)$`);
-        const m=String(name||'').match(re);
-        return m ? Number(m[1]) : null;
-      }
-      async function resyncPhotosFromRepo(){
-        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ console.warn('Cloud: repo kredencialy nie sú nastavené, preskakujem resync fotiek.'); return; }
-        const owner=syncCreds.repoOwner, repo=syncCreds.repoName, branch=syncCreds.repoBranch||'main';
-        const root=(syncCreds.repoFolder||'bozp-photos').replace(/^\/+|\/+$/g,'');
-        try{
-          const current=await DB.listAllPhotos();
-          const existingUrls=new Set(current.map(p=>p.remoteUrl).filter(Boolean));
-          const availableUrls=new Set();
-
-          const workplacesDirs=await listContents(owner, repo, root, branch);
-          for(const wDir of workplacesDirs.filter(x=>x.type==='dir')){
-            const wid=parseIdFromPrefixed(wDir.name,'workplace'); if(!wid) continue;
-            const tasksDirs=await listContents(owner, repo, `${root}/${wDir.name}`, branch);
-            for(const tDir of tasksDirs.filter(x=>x.type==='dir')){
-              const tid=parseIdFromPrefixed(tDir.name,'task'); if(!tid) continue;
-              const files=await listContents(owner, repo, `${root}/${wDir.name}/${tDir.name}`, branch);
-              for(const f of files.filter(x=>x.type==='file')){
-                const remoteUrl=f.download_url;
-                if(remoteUrl) availableUrls.add(remoteUrl);
-                if(!remoteUrl || existingUrls.has(remoteUrl)) continue;
-                const dummyFile=new File([new Uint8Array(0)], f.name, { type: 'image/*' });
-                const pid=await DB.addPhoto(tid, wid, null, dummyFile);
-                const p=await DB.getPhoto(pid);
-                p.remoteUrl=remoteUrl; p.remoteSha=f.sha||null; p.uploadedAt=Date.now();
-                await DB.updatePhoto(p);
-                existingUrls.add(remoteUrl);
-              }
-            }
-          }
-
-          for(const p of current){
-            if(p.remoteUrl && !availableUrls.has(p.remoteUrl)){
-              p.remoteUrl=null; p.remoteSha=null; p.uploadedAt=null;
-              await DB.updatePhoto(p);
-            }
-          }
-        }catch(err){
-          console.warn('Resync fotiek z repo zlyhal:', err?.message||err);
-        }
-      }
-
-      async function cloudSave(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
-        try{
-          setCloudState('Ukladám…');
-          const payload=await DB.exportJSON();
-          const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
-          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
-          const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
-          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
-          setCloudState('Uložené');
-        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
-      }
-
-      async function cloudLoad(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
-        try{
-          setCloudState('Načítavam…');
-          const j=await githubGetGist(syncCreds.gistId);
-          let file=j?.files?.[GIST_FILE_NAME];
-          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
-          let contentStr=file.content;
-          if(!contentStr && file.raw_url){
-            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
-            contentStr=await rawRes.text();
-          }
-          const data=JSON.parse(contentStr); await DB.importJSON(data);
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
-          setCloudState('Načítané');
-          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
-        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
-      }
-
-      async function cloudRefresh(){
-        await cloudLoad();
-        await resyncPhotosFromRepo();
-        await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); await loadTasksTable();
-      }
-
-      /* Image Viewer – fit/zoom režimy bez alertov */
+      /* Image Viewer – fit/zoom režimy */
       function initImageViewer(){
         viewer.overlay = document.getElementById('imgViewer');
         viewer.body    = document.getElementById('imgViewerBody');
@@ -1704,6 +1529,7 @@
         viewer.img.classList.add('fit');
         viewer.scale=1; viewer.tx=0; viewer.ty=0;
         viewer.img.style.transform='none';
+        viewer.overlay.setAttribute('aria-hidden','false');
       }
       function enterZoom(initialScale){
         viewer.mode='zoom';
@@ -1714,7 +1540,6 @@
         const ih = viewer.img.naturalHeight || viewer.img.height;
         const fit = Math.min(bw/iw, bh/ih);
         viewer.scale = Math.max(0.2, initialScale || (fit*2));
-        // vycentruj obraz
         viewer.tx = (bw - iw*viewer.scale)/2;
         viewer.ty = (bh - ih*viewer.scale)/2;
         viewer.img.style.cursor='grab';
@@ -1733,7 +1558,6 @@
         viewer.mode='fit';
         viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
         viewer.img.onerror = ()=>{ console.warn('Náhľad: nepodarilo sa načítať fotku:', src); closeImageViewer(); };
-        // Po načítaní obrázka nastav fit režim
         if (viewer.img.complete && viewer.img.naturalWidth>0) {
           enterFit();
         } else {
@@ -1743,11 +1567,74 @@
       function closeImageViewer(){
         viewer.overlay.setAttribute('aria-hidden','true');
         viewer.img.src='';
-        viewer.img.classList.add('fit'); // reset
+        viewer.img.classList.add('fit');
         viewer.mode='fit';
       }
 
-      window.openImageViewer = openImageViewer;
+      /* Cloud UI */
+      function bindCloudUI(){
+        const cloudBtn=document.getElementById('cloudBtn');
+        const cloudPopup=document.getElementById('cloudPopup');
+        const cloudOverlay=document.getElementById('cloudOverlay');
+        const cloudClose=document.getElementById('cloudClose');
+        const cloudGistIdInput=document.getElementById('cloudGistId');
+        const cloudTokenInput=document.getElementById('cloudToken');
+        const cloudRepoOwner=document.getElementById('cloudRepoOwner');
+        const cloudRepoName=document.getElementById('cloudRepoName');
+        const cloudRepoBranch=document.getElementById('cloudRepoBranch');
+        const cloudRepoFolder=document.getElementById('cloudRepoFolder');
+        const cloudSaveCreds=document.getElementById('cloudSaveCreds');
+        const cloudCreateGist=document.getElementById('cloudCreateGist');
+        const cloudErrorEl=document.getElementById('cloudError');
+        const cloudNoteEl=document.getElementById('cloudNote');
+
+        function showOverlay(){ cloudOverlay.classList.add('show'); cloudOverlay.setAttribute('aria-hidden','false'); }
+        function hideOverlay(){ cloudOverlay.classList.remove('show'); cloudOverlay.setAttribute('aria-hidden','true'); }
+        function showCloudError(msg){ cloudErrorEl.textContent=msg; cloudErrorEl.classList.add('show'); }
+        function clearCloudError(){ cloudErrorEl.textContent=''; cloudErrorEl.classList.remove('show'); }
+
+        cloudBtn.addEventListener('click',()=>{ const isHidden=cloudPopup.hasAttribute('hidden'); if(isHidden) cloudPopup.removeAttribute('hidden'); else cloudPopup.setAttribute('hidden',''); });
+        document.addEventListener('click',(e)=>{ if(!cloudPopup.hasAttribute('hidden')){ if(!e.target.closest('#cloudPopup') && !e.target.closest('#cloudBtn')) cloudPopup.setAttribute('hidden',''); }});
+
+        document.getElementById('cloudSettingsBtn').addEventListener('click',()=>{
+          clearCloudError(); cloudNoteEl.textContent='';
+          const c=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null')||{};
+          cloudGistIdInput.value=c.gistId||''; cloudTokenInput.value=c.token||'';
+          cloudRepoOwner.value=c.repoOwner||''; cloudRepoName.value=c.repoName||'';
+          cloudRepoBranch.value=c.repoBranch||'main'; cloudRepoFolder.value=c.repoFolder||'bozp-photos';
+          showOverlay();
+        });
+        cloudClose.addEventListener('click', hideOverlay);
+        cloudOverlay.addEventListener('click',(e)=>{ if(e.target===cloudOverlay) hideOverlay(); });
+
+        cloudSaveCreds.addEventListener('click',()=>{
+          if(!cloudTokenInput.value.trim()){ showCloudError('Vyžaduje sa token (scopes: gist + public_repo/repo).'); return; }
+          const creds={ gistId:cloudGistIdInput.value.trim(), token:cloudTokenInput.value.trim(), repoOwner:cloudRepoOwner.value.trim(), repoName:cloudRepoName.value.trim(), repoBranch:cloudRepoBranch.value.trim()||'main', repoFolder:cloudRepoFolder.value.trim()||'bozp-photos' };
+          localStorage.setItem(LS_SYNC_CREDS_KEY, JSON.stringify(creds));
+          alert('Cloud: nastavenia uložené.');
+          hideOverlay();
+        });
+
+        cloudCreateGist.addEventListener('click',async()=>{
+          const tk=cloudTokenInput.value.trim();
+          if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
+          try{
+            const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
+            const res=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':(tk.startsWith('github_pat_')?'Bearer ':'token ')+tk,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:JSON.stringify({description:'BOZP Workspace',public:false,files:{['bozp_export.json']:{content:payloadStr}}})});
+            if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
+            const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
+          }catch(err){ showCloudError(err.message); }
+        });
+
+        document.getElementById('cloudLoadBtn').addEventListener('click', cloudRefresh);
+        document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
+        document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
+        document.getElementById('cloudUploadPhotosBtn').addEventListener('click', uploadPendingPhotos);
+        document.getElementById('cloudSignOutBtn').addEventListener('click',()=>{ if(confirm('Odhlásiť cloud nastavenia?')){ localStorage.removeItem(LS_SYNC_CREDS_KEY); alert('Cloud: odhlásené.'); } });
+
+        const refreshTop=document.getElementById('cloudRefreshBtnTop');
+        if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
+      }
     })();
   </script>
 </body>
