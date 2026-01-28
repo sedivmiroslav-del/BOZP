@@ -93,7 +93,7 @@
     .panel { background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
 
     .table-wrap { margin-top: 16px; background: var(--white); border: 1px solid var(--light-gray); border-radius: var(--radius); overflow-x: auto; }
-    .table { width: 100%; border-collapse: collapse; }
+    ..table { width: 100%; border-collapse: collapse; }
     .table th, .table td { border-bottom: 1px solid var(--light-gray); padding: 8px; text-align: left; vertical-align: middle; }
     .table thead th { background: var(--light-gray); }
     .table tr:hover td { background: rgba(206,213,218,0.5); }
@@ -740,23 +740,23 @@
   <!-- Charts helper -->
   <script>
     (function(){
-      // Stabilné kľúče (keys) – krátke slugs. Zobrazené texty (name) sú vaše nové dlhé popisy.
+      // Stabilné kľúče (keys) – krátke slugs. name = dlhý popis; chartLabel = skrátený názov pre graf.
       const CHART_TOPICS = [
-        { key:'ovladacie_panely', name:`Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy` },
-        { key:'suporty', name:`Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)` },
-        { key:'koncove_spinace', name:`Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené` },
-        { key:'zlaby_listy', name:`Žľaby, lišty, výstupné pásy sú nevhodne konštruované
+        { key:'ovladacie_panely', chartLabel:'Ovládacie panely', name:`Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy` },
+        { key:'suporty', chartLabel:'Suporty', name:`Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)` },
+        { key:'koncove_spinace', chartLabel:'Koncové spínače', name:`Bezpečnostné koncové spínače sú nefunkčné alebo zámerne znefunkčnené` },
+        { key:'zlaby_listy', chartLabel:'Žľaby, lišty', name:`Žľaby, lišty, výstupné pásy sú nevhodne konštruované
 Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
-        { key:'zaseknute_diely', name:`Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)` },
-        { key:'zakonne_skolenia_podnikove', name:`Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)` },
-        { key:'matica_kvalifikacie', name:`Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané` },
-        { key:'skoliace_materialy_nnos', name:`Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických)` },
-        { key:'postupy_pretypovania', name:`Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania` },
-        { key:'cistiace_inspekcne_plany', name:`Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaný správny postup kontroly bezpečnostných koncových spínačov` },
-        { key:'analyza_rizik', name:`Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách` },
-        { key:'kontrolne_mechanizmy', name:`Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce)` },
-        { key:'revizia_pracoviska_ce', name:`Neodbornými zásahmi (PDCA, IF..) do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE)` },
-        { key:'prebierka_stroja', name:`Dochádza k produkovaniu na strojoch, ktoré nemajú vykonanú prebierku stroja` }
+        { key:'zaseknute_diely', chartLabel:'Zaseknuté diely', name:`Pochybeniami v postupe pretypovania, poškodeniami náradia dochádza zasekávaniu dielov v strojoch (nastáva bezpečnostné riziko pri vyberaní zaseknutých dielov zo strojov – uvoľnenie pnutia suportov)` },
+        { key:'zakonne_skolenia_podnikove', chartLabel:'Zákonné školenia', name:`Zákonné periodické bezpečnostné školenia nie sú dostatočne zamerané na režim pretypovania, nie sú dostatočne detailne spracované a chýbajú jednotné pravidlá školení (každý segment iný systém, iné materiály školenia...)` },
+        { key:'matica_kvalifikacie', chartLabel:'Matica kvalifikácie', name:`Termíny v zákonných školeniach Matice kvalifikácie nie sú dlhodobo dodržiavané` },
+        { key:'skoliace_materialy_nnos', chartLabel:'Školiace mat. (NnOS)', name:`Návody na obsluhu stroja definované výrobcom nie sú zohľadnené v školiacich materiáloch (bezpečnostných, technologických)` },
+        { key:'postupy_pretypovania', chartLabel:'Postupy pretypovania', name:`Postupy pretypovania a na to nadväzujúce technologické školenia neobsahujú bezpečnostné riziká počas pretypovania` },
+        { key:'cistiace_inspekcne_plany', chartLabel:'Čistenie/inspekcie', name:`Čistiace a inšpekčné plány neobsahujú vizualizáciu všetkých bezpečnostných koncových spínačov, nie je definovaný správny postup kontroly bezpečnostných koncových spínačov` },
+        { key:'analyza_rizik', chartLabel:'Analýza rizík', name:`Analýzy rizík nie sú dostatočne detailne spracované pre zabezpečenie štandardov bezpečnosti práce na pracoviskách` },
+        { key:'kontrolne_mechanizmy', chartLabel:'Kontrolné mechanizmy', name:`Kontrolné mechanizmy v oblasti Bezpečnosti práce nie sú nastavené dostatočne (neodhaľujú hore uvedené nedostatky v systéme bezpečnosti práce)` },
+        { key:'revizia_pracoviska_ce', chartLabel:'Revízia pracoviska (CE)', name:`Neodbornými zásahmi (PDCA, IF..) do strojov dochádza k porušeniu bezpečnostných štandardov strojov daných výrobcom (CE)` },
+        { key:'prebierka_stroja', chartLabel:'Prebierka stroja', name:`Dochádza k produkovaniu na strojoch, ktoré nemajú vykonanú prebierku stroja` }
       ];
       let chartPie=null, chartBar=null;
 
@@ -784,7 +784,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         chartBar=new Chart(ctx,{
           type:'bar',
           data:{
-            labels:CHART_TOPICS.map(t=>t.name),
+            labels:CHART_TOPICS.map(t=>t.chartLabel || t.name),
             datasets:[{
               label:'Počet NIO',
               data:CHART_TOPICS.map(t=>topicNioCounts[t.key]||0),
@@ -795,8 +795,24 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
           },
           options:{
             indexAxis:'x',
-            scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } },
-            plugins:{ legend:{ position:'bottom' } }
+            scales:{
+              x:{ ticks:{ maxRotation:40, minRotation:0, autoSkip:false } },
+              y:{ beginAtZero:true, ticks:{ precision:0 } }
+            },
+            plugins:{
+              legend:{ position:'bottom' },
+              tooltip:{
+                callbacks:{
+                  title(items){
+                    const i = items?.[0]?.dataIndex ?? 0;
+                    return CHART_TOPICS[i]?.name || items?.[0]?.label || '';
+                  },
+                  label(ctx){
+                    return `Počet NIO: ${ctx.parsed.y}`;
+                  }
+                }
+              }
+            }
           }
         });
       }
@@ -804,7 +820,6 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
       window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
-
   <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
   <script>
     (function(){
@@ -1152,7 +1167,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1167,7 +1182,7 @@ Pri pohybe suportov dochádza k zdraviu nebezpečnému „strihu“` },
 
         fileInp.addEventListener('change', async ()=>{
           const files=Array.from(fileInp.files||[]); if(files.length>5){ alert('Maximálne 5 fotiek na tému.'); fileInp.value=''; return; }
-          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
+          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src=url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
         });
 
         card.append(header,body);
