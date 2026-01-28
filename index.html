@@ -159,7 +159,42 @@
     .modal-body img{
       width:120px; height:90px; object-fit:cover;
       border:1px solid var(--light-gray); border-radius:8px;
+      cursor: zoom-in;
     }
+
+    /* Image Viewer (zoomač) */
+    .imgViewer[aria-hidden="true"]{display:none}
+    .imgViewer[aria-hidden="false"]{
+      position:fixed; inset:0; background:rgba(0,0,0,.7);
+      display:flex; align-items:center; justify-content:center; z-index:1001;
+    }
+    .imgViewer-content{
+      width:min(95vw,1100px); max-height:90vh;
+      background:#fff; border:2px solid var(--light-gray);
+      border-radius:10px; box-shadow:var(--shadow); overflow:hidden; color:#000;
+      display:flex; flex-direction:column;
+    }
+    .imgViewer-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; background:rgb(206,213,218); border-bottom:1px solid var(--light-gray);
+    }
+    .imgViewer-tools{ display:flex; gap:6px; align-items:center; }
+    .imgViewer-body{
+      position:relative; background:#000; height:70vh; max-height:calc(90vh - 60px);
+      overflow:hidden; touch-action:none;
+    }
+    .imgViewer-body img{
+      user-select:none; -webkit-user-drag:none;
+      will-change: transform;
+      transform-origin: center center;
+      max-width:none; max-height:none;
+      cursor: grab;
+    }
+    .imgToolBtn{
+      padding:6px 10px; border:1px solid var(--light-gray); border-radius:8px;
+      background:#fff; cursor:pointer;
+    }
+    .imgToolBtn:hover{ background:rgb(246,251,253); }
 
     @media (max-width: 980px) {
       .cards { grid-template-columns: repeat(2, 1fr); }
@@ -167,6 +202,7 @@
       .chart-section { margin-top: 12px; }
       .form-row { grid-template-columns: 1fr; }
       .topic-body { grid-template-columns: 1fr; }
+      .imgViewer-body { height:65vh; }
     }
   </style>
 </head>
@@ -184,7 +220,6 @@
         <li><a href="#" data-route="tasks" class="nav-link">Úlohy</a></li>
         <li><a href="#" data-route="importExport" class="nav-link">Import/Export</a></li>
       </ul>
-      <!-- Horné tlačidlo Obnoviť -->
       <div class="header-actions" aria-label="Cloud akcie">
         <button id="cloudRefreshBtnTop" class="btn" type="button" title="Načítať dáta z Gistu + dohrať fotky z repo">Obnoviť</button>
       </div>
@@ -192,7 +227,6 @@
   </header>
 
   <main id="main" class="app-main" role="main">
-    <!-- DASHBOARD -->
     <section id="view-dashboard" class="view" aria-labelledby="dashboard-title">
       <h2 id="dashboard-title">Prehľad a vizualizácie</h2>
       <div class="filters">
@@ -230,7 +264,6 @@
       </div>
     </section>
 
-    <!-- WORKPLACES -->
     <section id="view-workplaces" class="view" aria-labelledby="workplaces-title" hidden>
       <h2 id="workplaces-title">Správa pracovísk</h2>
 
@@ -310,7 +343,6 @@
       </div>
     </section>
 
-    <!-- ASSESSMENT -->
     <section id="view-assessment" class="view" aria-labelledby="assessment-title" hidden>
       <h2 id="assessment-title">Hodnotenie tém</h2>
 
@@ -332,7 +364,6 @@
       </form>
     </section>
 
-    <!-- TASKS -->
     <section id="view-tasks" class="view" aria-labelledby="tasks-title" hidden>
       <h2 id="tasks-title">Úlohy z NIO</h2>
 
@@ -375,7 +406,6 @@
       </div>
     </section>
 
-    <!-- IMPORT/EXPORT + Cloud -->
     <section id="view-importExport" class="view" aria-labelledby="importexport-title" hidden>
       <h2 id="importexport-title">Import/Export dát</h2>
 
@@ -436,6 +466,24 @@
     </div>
   </div>
 
+  <!-- Image Viewer (zoom) -->
+  <div id="imgViewer" class="imgViewer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="imgViewerTitle">
+    <div class="imgViewer-content" role="document">
+      <div class="imgViewer-header">
+        <strong id="imgViewerTitle">Náhľad fotky</strong>
+        <div class="imgViewer-tools" aria-label="Ovládanie zväčšenia">
+          <button id="imgZoomOut" class="imgToolBtn" type="button" aria-label="Zmenšiť">−</button>
+          <button id="imgZoomIn" class="imgToolBtn" type="button" aria-label="Zväčšiť">+</button>
+          <button id="imgZoomReset" class="imgToolBtn" type="button" aria-label="Resetovať zobrazenie">Reset</button>
+          <button id="imgViewerClose" class="imgToolBtn" type="button" aria-label="Zavrieť">Zavrieť</button>
+        </div>
+      </div>
+      <div id="imgViewerBody" class="imgViewer-body">
+        <img id="imgViewerImg" src="" alt="" />
+      </div>
+    </div>
+  </div>
+
   <!-- Cloud Settings Modal (inline) -->
   <div id="cloudOverlay" class="cloudOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
     <div class="cloudModal">
@@ -490,9 +538,9 @@
       let useMemory = false;
       const mem = {
         workplaces: [],
-        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
+        assessments: new Map(),
         tasks: [],
-        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
+        photos: [],
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -607,7 +655,7 @@
           await this.deleteAssessment(workplaceId);
           const tasks = await this.listTasks();
           for (const t of tasks.filter(x=>x.workplaceId===workplaceId)){
-            await this.deleteTask(t.id); // zmaže aj fotky danej úlohy
+            await this.deleteTask(t.id);
           }
         },
 
@@ -740,7 +788,6 @@
   <!-- Charts helper -->
   <script>
     (function(){
-      // Stabilné kľúče (keys) – name = dlhý popis; chartLabel = skrátený názov pre graf.
       const CHART_TOPICS = [
         { key:'ovladacie_panely', chartLabel:'Ovládacie panely', name:'Ovládacie panely dodané výrobcom nespĺňajú základné bezpečnostné štandardy' },
         { key:'suporty', chartLabel:'Suporty', name:'Suporty strojov vykonávajú zdraviu ohrozujúce pohyby (stlačením tlačidla dochádza k pohybu na doraz)' },
@@ -820,7 +867,7 @@
     })();
   </script>
 
-  <!-- Hlavná logika + Cloud (Gist) + GitHub Contents API (fotky) -->
+  <!-- Hlavná logika + Cloud + Image Viewer -->
   <script>
     (function(){
       const TOPICS_LIST = (window.Charts && window.Charts.TOPICS) || [];
@@ -835,6 +882,13 @@
 
       let syncCreds = null;
 
+      // Image viewer (zoom) state
+      const viewer = {
+        overlay: null, body: null, img: null,
+        zoomInBtn: null, zoomOutBtn: null, resetBtn: null, closeBtn: null,
+        scale: 1, tx: 0, ty: 0, isDragging: false, lastX: 0, lastY: 0
+      };
+
       document.addEventListener('DOMContentLoaded', init);
 
       function init(){
@@ -843,6 +897,8 @@
         document.getElementById('modal-close').addEventListener('click', closeModal);
         document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        initImageViewer();
 
         initRouting();
         refreshFilters().then(() => {
@@ -1066,7 +1122,6 @@
             document.getElementById('btn-start-assessment').click();
           });
         });
-        // Zrušiť hodnotenie (anuluje IO/NIO, zmaže úlohy a fotky pre dané pracovisko)
         tbody.querySelectorAll('button[data-action="cancel"]').forEach(btn=>{
           btn.addEventListener('click', async ()=>{
             if(!confirm('Zrušiť hodnotenie pre toto pracovisko? Zmažú sa aj všetky úlohy a fotky pre dané pracovisko.')) return;
@@ -1142,7 +1197,6 @@
         document.getElementById('form-assessment').hidden=false;
       }
 
-      // Pomocná funkcia: pri chybe načítania obrázka skryť náhľad a vyčistiť záznam v DB
       async function cleanupPhotoIfMissing(photo){
         try{
           if(!photo.remoteUrl) return false;
@@ -1161,6 +1215,9 @@
           try{ await cleanupPhotoIfMissing(photo); }catch(_){}
         });
       }
+
+      function openModal(){ document.getElementById('modal').setAttribute('aria-hidden','false'); }
+      function closeModal(){ document.getElementById('modal').setAttribute('aria-hidden','true'); }
 
       function createTopicCard(topic, currentStatus, workplaceId){
         const card=createEl('div',{class:'topic-card','data-topic':topic.key});
@@ -1187,7 +1244,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1218,6 +1275,8 @@
           if(!src) continue;
           const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`}); const name=createEl('span'); name.textContent=p.name;
           attachImgErrorCleanup(img, p, item);
+          // umožni zväčšenie aj tu
+          img.addEventListener('click', ()=> openImageViewer(src, `Fotka k téme (${topicKey})`));
           item.append(img,name); photosWrap.appendChild(item);
         }
       }
@@ -1254,16 +1313,13 @@
           const canAdd=Math.max(0, 5-already);
           for(const file of info.files.slice(0, canAdd)){
             const pid=await DB.addPhoto(taskId, workplaceId, topicKey, file);
-            await tryUploadPhoto(pid); // automaticky upload do repo
+            await tryUploadPhoto(pid);
           }
         }
 
-        // po uložení údajov do DB ihneď uložíme JSON do Gist (ak sú kredencialy)
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.');
-
-        // návrat na Pracoviská po uložení
         navigate('workplaces');
 
         updateDashboard(); loadWorkplacesTable();
@@ -1275,7 +1331,6 @@
         document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
       }
 
-      // odraz stavu úlohy do hodnotenia (Splnená => IO, iné => NIO)
       async function reflectTaskStatusInAssessment(task){
         if(!task || !task.workplaceId || !task.topicKey) return;
         const current=await DB.getAssessment(task.workplaceId);
@@ -1342,10 +1397,13 @@
             for(const p of photos){
               const src=p.remoteUrl ? p.remoteUrl : (p.blob ? URL.createObjectURL(p.blob) : '');
               if(!src) continue;
-              const item=createEl('div',{}); // wrapper nie je vizuálny, stačí img
+              const item=createEl('div',{}); 
               const img=createEl('img',{src:src,alt:`Fotka úlohy ${p.name}`});
               attachImgErrorCleanup(img, p, item);
-              modalBody.appendChild(img);
+              // klik na náhľad otvorí zoomač
+              img.addEventListener('click', ()=> openImageViewer(src, `Fotka úlohy ${p.name}`));
+              item.appendChild(img);
+              modalBody.appendChild(item);
             }
             openModal();
           });
@@ -1358,7 +1416,7 @@
             const files=Array.from(input.files||[]);
             for(const f of files.slice(0, Math.max(0,5-already))){
               const pid=await DB.addPhoto(id, null, null, f);
-              await tryUploadPhoto(pid); // automaticky upload do repo
+              await tryUploadPhoto(pid);
             }
             input.value=''; loadTasksTable();
             try { await cloudSave(); } catch(e) { console.warn('Cloud save po pridaní fotiek zlyhal:', e?.message||e); }
@@ -1394,9 +1452,6 @@
         downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8;'}),'ulohy.csv');
       }
 
-      function openModal(){ document.getElementById('modal').setAttribute('aria-hidden','false'); }
-      function closeModal(){ document.getElementById('modal').setAttribute('aria-hidden','true'); }
-
       function bindImportExport(){
         document.getElementById('btn-export-json').addEventListener('click', async ()=>{
           const data=await DB.exportJSON();
@@ -1415,7 +1470,6 @@
         });
       }
 
-      /* Cloud (Gist) + GitHub repo (fotky) */
       function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
       function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
       function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
@@ -1456,7 +1510,6 @@
         }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
       }
 
-      // Pomocné funkcie Contents API
       function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
       function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
       function buildPhotoPath(photo, fileName){
@@ -1514,7 +1567,6 @@
         alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
       }
 
-      // Resync fotiek z repo do lokálnej DB + odstránenie referencií na zmazané súbory
       function parseIdFromPrefixed(name, prefix){
         const re=new RegExp(`^${prefix}-(\\d+)$`);
         const m=String(name||'').match(re);
@@ -1527,7 +1579,7 @@
         try{
           const current=await DB.listAllPhotos();
           const existingUrls=new Set(current.map(p=>p.remoteUrl).filter(Boolean));
-          const availableUrls=new Set(); // zoznam reálne existujúcich URL v repo
+          const availableUrls=new Set();
 
           const workplacesDirs=await listContents(owner, repo, root, branch);
           for(const wDir of workplacesDirs.filter(x=>x.type==='dir')){
@@ -1550,7 +1602,6 @@
             }
           }
 
-          // Odstráň referencie na fotky, ktoré už v repo neexistujú
           for(const p of current){
             if(p.remoteUrl && !availableUrls.has(p.remoteUrl)){
               p.remoteUrl=null; p.remoteSha=null; p.uploadedAt=null;
@@ -1560,6 +1611,20 @@
         }catch(err){
           console.warn('Resync fotiek z repo zlyhal:', err?.message||err);
         }
+      }
+
+      async function cloudSave(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
+        try{
+          setCloudState('Ukladám…');
+          const payload=await DB.exportJSON();
+          const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
+          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
+          const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
+          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
+          setCloudState('Uložené');
+        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
 
       async function cloudLoad(){
@@ -1579,20 +1644,6 @@
           setCloudState('Načítané');
           await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
         }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
-      }
-
-      async function cloudSave(){
-        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
-        try{
-          setCloudState('Ukladám…');
-          const payload=await DB.exportJSON();
-          const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
-          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
-          const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
-          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
-          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
-          setCloudState('Uložené');
-        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
       }
 
       async function cloudRefresh(){
@@ -1649,7 +1700,6 @@
           }catch(err){ showCloudError(err.message); }
         });
 
-        // Spodné tlačidlá
         document.getElementById('cloudLoadBtn').addEventListener('click', cloudRefresh);
         document.getElementById('cloudSaveBtn').addEventListener('click', cloudSave);
         document.getElementById('cloudCheckBtn').addEventListener('click', cloudCheckRate);
@@ -1659,6 +1709,97 @@
         const refreshTop=document.getElementById('cloudRefreshBtnTop');
         if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
       }
+
+      /* Image Viewer (zoom) */
+      function initImageViewer(){
+        viewer.overlay = document.getElementById('imgViewer');
+        viewer.body    = document.getElementById('imgViewerBody');
+        viewer.img     = document.getElementById('imgViewerImg');
+        viewer.zoomInBtn  = document.getElementById('imgZoomIn');
+        viewer.zoomOutBtn = document.getElementById('imgZoomOut');
+        viewer.resetBtn   = document.getElementById('imgZoomReset');
+        viewer.closeBtn   = document.getElementById('imgViewerClose');
+
+        viewer.zoomInBtn.addEventListener('click', ()=> setViewerScale(viewer.scale * 1.2));
+        viewer.zoomOutBtn.addEventListener('click', ()=> setViewerScale(viewer.scale / 1.2));
+        viewer.resetBtn.addEventListener('click', resetViewer);
+        viewer.closeBtn.addEventListener('click', closeImageViewer);
+        viewer.overlay.addEventListener('click', (e)=>{ if(e.target===viewer.overlay) closeImageViewer(); });
+
+        viewer.body.addEventListener('wheel', (e)=>{
+          e.preventDefault();
+          const delta = e.deltaY;
+          if (delta>0) setViewerScale(viewer.scale/1.1);
+          else setViewerScale(viewer.scale*1.1);
+        }, { passive:false });
+
+        viewer.img.addEventListener('dblclick', ()=>{
+          if(viewer.scale<=1.01) setViewerScale(2);
+          else resetViewer();
+        });
+
+        viewer.img.addEventListener('mousedown', (e)=>{
+          viewer.isDragging=true; viewer.lastX=e.clientX; viewer.lastY=e.clientY; viewer.img.style.cursor='grabbing';
+        });
+        window.addEventListener('mouseup', ()=>{
+          viewer.isDragging=false; viewer.img.style.cursor='grab';
+        });
+        window.addEventListener('mousemove', (e)=>{
+          if(!viewer.isDragging) return;
+          const dx=e.clientX-viewer.lastX, dy=e.clientY-viewer.lastY;
+          viewer.lastX=e.clientX; viewer.lastY=e.clientY;
+          viewer.tx += dx; viewer.ty += dy; updateViewerTransform();
+        });
+
+        // Touch (drag)
+        viewer.img.addEventListener('touchstart', (e)=>{
+          if(e.touches.length===1){ viewer.isDragging=true; viewer.lastX=e.touches[0].clientX; viewer.lastY=e.touches[0].clientY; }
+        }, {passive:true});
+        viewer.img.addEventListener('touchmove', (e)=>{
+          if(viewer.isDragging && e.touches.length===1){
+            const t=e.touches[0];
+            const dx=t.clientX-viewer.lastX, dy=t.clientY-viewer.lastY;
+            viewer.lastX=t.clientX; viewer.lastY=t.clientY;
+            viewer.tx += dx; viewer.ty += dy; updateViewerTransform();
+          }
+        }, {passive:true});
+        viewer.img.addEventListener('touchend', ()=>{ viewer.isDragging=false; }, {passive:true});
+
+        // Keyboard helpers
+        document.addEventListener('keydown', (e)=>{
+          if(viewer.overlay.getAttribute('aria-hidden')==='true') return;
+          if(e.key==='+') setViewerScale(viewer.scale*1.2);
+          else if(e.key==='-') setViewerScale(viewer.scale/1.2);
+          else if(e.key==='0') resetViewer();
+          else if(e.key==='ArrowLeft') { viewer.tx-=20; updateViewerTransform(); }
+          else if(e.key==='ArrowRight'){ viewer.tx+=20; updateViewerTransform(); }
+          else if(e.key==='ArrowUp')   { viewer.ty-=20; updateViewerTransform(); }
+          else if(e.key==='ArrowDown') { viewer.ty+=20; updateViewerTransform(); }
+          else if(e.key==='Escape') closeImageViewer();
+        });
+      }
+      function setViewerScale(s){
+        viewer.scale = Math.max(0.2, Math.min(8, s));
+        updateViewerTransform();
+      }
+      function resetViewer(){
+        viewer.scale=1; viewer.tx=0; viewer.ty=0; updateViewerTransform();
+      }
+      function updateViewerTransform(){
+        viewer.img.style.transform = `translate(${viewer.tx}px, ${viewer.ty}px) scale(${viewer.scale})`;
+      }
+      function openImageViewer(src, alt){
+        viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
+        resetViewer();
+        viewer.overlay.setAttribute('aria-hidden','false');
+      }
+      function closeImageViewer(){
+        viewer.overlay.setAttribute('aria-hidden','true');
+        viewer.img.src='';
+      }
+
+      // Expose for other handlers
+      window.openImageViewer = openImageViewer;
     })();
   </script>
 </body>
