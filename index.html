@@ -545,9 +545,9 @@
       let useMemory = false;
       const mem = {
         workplaces: [],
-        assessments: new Map(),
+        assessments: new Map(), // key: workplaceId -> {workplaceId, statuses, savedAt}
         tasks: [],
-        photos: [],
+        photos: [], // {id, taskId, workplaceId, topicKey, name, type, size, blob, createdAt, remoteUrl, remoteSha, uploadedAt}
         ids: { workplace: 1, task: 1, photo: 1 }
       };
 
@@ -662,7 +662,7 @@
           await this.deleteAssessment(workplaceId);
           const tasks = await this.listTasks();
           for (const t of tasks.filter(x=>x.workplaceId===workplaceId)){
-            await this.deleteTask(t.id);
+            await this.deleteTask(t.id); // zmaže aj fotky danej úlohy
           }
         },
 
@@ -679,12 +679,12 @@
         async addTask(task){
           const db = await openDb();
           const rec = { workplaceId:task.workplaceId, topicKey:task.topicKey, responsible:task.responsible||'', dueDate:task.dueDate||null, status:task.status||'Otvorená', createdAt:Date.now() };
-          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id,...rec}); return id; }
+          if (useMemory) { const id=mem.ids.task++; mem.tasks.push({id, ...rec}); return id; }
           return await add(tx(db,['tasks'],'readwrite').objectStore('tasks'), rec);
         },
         async updateTask(task){
           const db = await openDb();
-          if (useMemory) { const i=mem.tasks.findIndex(x=>x.id===task.id); if(i>=0) mem.tasks[i]={...mem.tasks[i],...task}; return; }
+          if (useMemory) { const i=mem.tasks.findIndex(x=>x.id===task.id); if(i>=0) mem.tasks[i]={...mem.tasks[i], ...task}; return; }
           await put(tx(db,['tasks'],'readwrite').objectStore('tasks'), task);
         },
         async deleteTask(id){
@@ -704,7 +704,7 @@
           try { const buf = await file.arrayBuffer(); blob = new Blob([buf], { type }); }
           catch { blob = file || new Blob([], { type }); }
           const rec = { taskId, workplaceId:workplaceId||null, topicKey:topicKey||null, name, type, size, blob, createdAt:Date.now(), remoteUrl:null, remoteSha:null, uploadedAt:null };
-          if (useMemory) { const id=mem.ids.photo++; mem.photos.push({id,...rec}); return id; }
+          if (useMemory) { const id=mem.ids.photo++; mem.photos.push({id, ...rec}); return id; }
           return await add(tx(db,['photos'],'readwrite').objectStore('photos'), rec);
         },
         async listPhotosByTask(taskId){
@@ -719,7 +719,7 @@
         },
         async updatePhoto(photo){
           const db = await openDb();
-          if (useMemory) { const i=mem.photos.findIndex(x=>x.id===photo.id); if(i>=0) mem.photos[i]={...mem.photos[i],...photo}; return; }
+          if (useMemory) { const i=mem.photos.findIndex(x=>x.id===photo.id); if(i>=0) mem.photos[i]={...mem.photos[i], ...photo}; return; }
           await put(tx(db,['photos'],'readwrite').objectStore('photos'), photo);
         },
         async getPhoto(id){
@@ -870,7 +870,7 @@
         });
       }
 
-      window.Charts = { renderPie: renderPie, renderBar: renderBar, TOPICS: CHART_TOPICS };
+      window.Charts = { renderPie, renderBar, TOPICS: CHART_TOPICS };
     })();
   </script>
 
@@ -1158,12 +1158,12 @@
           let rows=[];
           if(file.name.toLowerCase().endsWith('.csv')){
             const text=await file.text();
-            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v a n d v.trim().length>0));
+            rows=text.split(/\r?\n/).map(l=>l.split(';')).filter(r=>r.length>=4 && r.some(v=>v && (typeof v==='string' ? v.trim().length>0 : String(v).trim().length>0)));
           }else{
             const data=new Uint8Array(await file.arrayBuffer());
             const wb=XLSX.read(data,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
             const arr=XLSX.utils.sheet_to_json(ws,{header:1,raw:true});
-            rows=arr.filter(r=>r.length>=4 a n d r.some(v=>v && String(v).trim().length>0));
+            rows=arr.filter(r=>r.length>=4 && r.some(v=>v && String(v).trim().length>0));
           }
           let imported=0;
           for(const r of rows){
@@ -1252,7 +1252,7 @@
         const fileLbl=createEl('label',{for:`file-${topic.key}`}); fileLbl.textContent='Fotky (max 5)';
         const fileInp=createEl('input',{id:`file-${topic.key}`,type:'file',accept:'image/*',multiple:'multiple'});
         const photosWrap=createEl('div',{class:'photo-list',id:`photos-${topic.key}`});
-      [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
+       [respLbl,respInp,dueLbl,dueInp,fileLbl,fileInp,photosWrap].forEach(el=>detail.appendChild(el));
         body.appendChild(detail);
 
         const updateBadge=()=>{
@@ -1267,7 +1267,13 @@
 
         fileInp.addEventListener('change', async ()=>{
           const files=Array.from(fileInp.files||[]); if(files.length>5){ alert('Maximálne 5 fotiek na tému.'); fileInp.value=''; return; }
-          photosWrap.innerHTML=''; for(const f of files){ const url=URL.createObjectURL(f); const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:url,alt:`Nahraná fotka: ${f.name}`}); const name=createEl('span'); name.textContent=f.name; item.append(img,name); photosWrap.appendChild(item); }
+          photosWrap.innerHTML=''; for(const f of files){
+            const url=URL.createObjectURL(f);
+            const item=createEl('div',{class:'photo-item'});
+            const img=createEl('img',{src:url,alt:`Nahraná fotka: ${f.name}`});
+            const name=createEl('span'); name.textContent=f.name;
+            item.append(img,name); photosWrap.appendChild(item);
+          }
         });
 
         card.append(header,body);
@@ -1283,6 +1289,7 @@
           if(!src) continue;
           const item=createEl('div',{class:'photo-item'}); const img=createEl('img',{src:src,alt:`Fotka k téme (${topicKey})`}); const name=createEl('span'); name.textContent=p.name;
           attachImgErrorCleanup(img, p, item);
+          // klik na náhľad otvorí zoomač
           img.addEventListener('click', ()=> openImageViewer(src, `Fotka k téme (${topicKey})`));
           item.append(img,name); photosWrap.appendChild(item);
         }
@@ -1311,7 +1318,7 @@
 
         const existingTasks=await DB.listTasks();
         for(const[topicKey, info] of Object.entries(nioData)){
-          let task=existingTasks.find(t=>t.workplaceId===workplaceId a n d t.topicKey===topicKey);
+          let task=existingTasks.find(t=>t.workplaceId===workplaceId && t.topicKey===topicKey);
           let taskId;
           if(!task){ taskId=await DB.addTask({workplaceId, topicKey, responsible:info.responsible, dueDate:info.dueDate, status:'Otvorená'}); }
           else { task.responsible=info.responsible; task.dueDate=info.dueDate; await DB.updateTask(task); taskId=task.id; }
@@ -1320,13 +1327,15 @@
           const canAdd=Math.max(0, 5-already);
           for(const file of info.files.slice(0, canAdd)){
             const pid=await DB.addPhoto(taskId, workplaceId, topicKey, file);
-            await tryUploadPhoto(pid);
+            await tryUploadPhoto(pid); // automaticky upload do repo
           }
         }
 
         try { await cloudSave(); } catch(e) { console.warn('Cloud save po hodnotení zlyhal:', e?.message||e); }
 
         alert('Hodnotenie uložené.');
+
+        // návrat na Pracoviská po uložení
         navigate('workplaces');
 
         updateDashboard(); loadWorkplacesTable();
@@ -1338,6 +1347,7 @@
         document.getElementById('btn-export-tasks').addEventListener('click', exportTasksCSV);
       }
 
+      // odraz stavu úlohy do hodnotenia (Splnená => IO, iné => NIO)
       async function reflectTaskStatusInAssessment(task){
         if(!task || !task.workplaceId || !task.topicKey) return;
         const current=await DB.getAssessment(task.workplaceId);
@@ -1598,10 +1608,10 @@
 
         document.getElementById('cloudSettingsBtn').addEventListener('click',()=>{
           clearCloudError(); cloudNoteEl.textContent='';
-          const c=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null')||{};
-          cloudGistIdInput.value=c.gistId||''; cloudTokenInput.value=c.token||'';
-          cloudRepoOwner.value=c.repoOwner||''; cloudRepoName.value=c.repoName||'';
-          cloudRepoBranch.value=c.repoBranch||'main'; cloudRepoFolder.value=c.repoFolder||'bozp-photos';
+          let c=null; try{ c=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); }catch{ c=null; }
+          cloudGistIdInput.value=c?.gistId||''; cloudTokenInput.value=c?.token||'';
+          cloudRepoOwner.value=c?.repoOwner||''; cloudRepoName.value=c?.repoName||'';
+          cloudRepoBranch.value=c?.repoBranch||'main'; cloudRepoFolder.value=c?.repoFolder||'bozp-photos';
           showOverlay();
         });
         cloudClose.addEventListener('click', hideOverlay);
@@ -1620,7 +1630,11 @@
           if(!tk){ showCloudError('Vyžaduje sa token (scope: gist) na vytvorenie gistu.'); return; }
           try{
             const payloadStr=JSON.stringify({version:3, note:'Inicializácia BOZP App'},null,2);
-            const res=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':(tk.startsWith('github_pat_')?'Bearer ':'token ')+tk,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:JSON.stringify({description:'BOZP Workspace',public:false,files:{['bozp_export.json']:{content:payloadStr}}})});
+            const res=await fetch('https://api.github.com/gists',{
+              method:'POST',
+              headers:{'Authorization':(tk.startsWith('github_pat_')?'Bearer ':'token ')+tk,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},
+              body:JSON.stringify({description:'BOZP Workspace',public:false,files:{[GIST_FILE_NAME]:{content:payloadStr}}})
+            });
             if(!res.ok){ const txt=await res.text(); throw new Error('Create Gist zlyhalo: '+txt); }
             const j=await res.json(); cloudGistIdInput.value=j?.id||''; cloudNoteEl.textContent='Vytvorený nový súkromný gist. ID: '+(j?.id||'—');
           }catch(err){ showCloudError(err.message); }
@@ -1634,6 +1648,217 @@
 
         const refreshTop=document.getElementById('cloudRefreshBtnTop');
         if(refreshTop) refreshTop.addEventListener('click', cloudRefresh);
+      }
+
+      /* Cloud (Gist) + GitHub repo (fotky) */
+      function authHeader(tk){ const t=(tk||'').trim(); return (t.startsWith('github_pat_')?'Bearer ':'token ')+t; }
+      function githubHeaders(hasJson=false){ const h={'Authorization':authHeader(syncCreds?.token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
+      function githubHeadersWithToken(token,hasJson=false){ const h={'Authorization':authHeader(token||''),'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}; if(hasJson) h['Content-Type']='application/json'; return h; }
+      function setCloudState(msg){ document.getElementById('cloudState').textContent=msg; }
+
+      function loadSyncCreds(){
+        try{ syncCreds=JSON.parse(localStorage.getItem(LS_SYNC_CREDS_KEY)||'null'); }catch{ syncCreds=null; }
+        const idTxt=syncCreds?.gistId?(syncCreds.gistId.slice(0,8)+'…'):'—';
+        const repoTxt=(syncCreds?.repoOwner&&syncCreds?.repoName)?`${syncCreds.repoOwner}/${syncCreds.repoName}`:'—';
+        setCloudState((syncCreds?.gistId?`Gist ${idTxt}`:'Gist: —') + ' • ' + (repoTxt!=='—'?repoTxt:'Repo: —'));
+      }
+
+      async function githubGetGist(id){
+        const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(id),{headers:githubHeaders(false)});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return res.json();
+      }
+
+      async function cloudCheckRate(){
+        if(!syncCreds?.token){ alert('Cloud: chýba token.'); return; }
+        try{
+          const res=await fetch('https://api.github.com/rate_limit',{headers:githubHeaders(false)});
+          const j=await res.json();
+          const core=j?.resources?.core;
+          const resetTxt=core?.reset?new Date(core.reset*1000).toLocaleString('sk-SK'):'—';
+          alert(`API limit: ${core?.remaining}/${core?.limit} • reset: ${resetTxt}`);
+        }catch(err){ alert('Cloud: kontrola limitu zlyhala: '+(err?.message||err)); }
+      }
+
+      async function cloudLoad(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ alert('Cloud: chýba ID alebo Token.'); return; }
+        try{
+          setCloudState('Načítavam…');
+          const j=await githubGetGist(syncCreds.gistId);
+          let file=j?.files?.[GIST_FILE_NAME];
+          if(!file){ alert(`V giste chýba súbor ${GIST_FILE_NAME}. Vytvorím ho pri uložení.`); setCloudState('Odpojené (chýba súbor)'); return; }
+          let contentStr=file.content;
+          if(!contentStr && file.raw_url){
+            const rawRes=await fetch(file.raw_url,{headers:{'Accept':'application/vnd.github.v3.raw'}});
+            contentStr=await rawRes.text();
+          }
+          const data=JSON.parse(contentStr); await DB.importJSON(data);
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT, String(data?.meta?.updatedAt||Date.now())); }catch{}
+          setCloudState('Načítané');
+          await refreshFilters(); await loadWorkplacesTable(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+        }catch(err){ console.error(err); alert('Cloud: chyba načítania. '+(err?.message||err)); setCloudState('Chyba načítania'); }
+      }
+
+      // GitHub Contents API helpers
+      function encodePathSegments(path){ return String(path||'').split('/').map(seg=>encodeURIComponent(seg)).join('/'); }
+      function sanitizeName(name){ return String(name||'').replace(/[^a-zA-Z0-9._-]+/g,'_').slice(0,120); }
+      function buildPhotoPath(photo, fileName){
+        const root=(syncCreds?.repoFolder || 'bozp-photos').replace(/^\/+|\/+$/g,'');
+        const wp=photo.workplaceId?`workplace-${photo.workplaceId}`:'workplace-unknown';
+        const tk=photo.taskId?`task-${photo.taskId}`:'task-unknown';
+        return `${root}/${wp}/${tk}/${Date.now()}-${sanitizeName(fileName||photo.name||'photo')}`;
+      }
+      async function listContents(owner, repo, path, branch){
+        const safePath=encodePathSegments(path.replace(/^\/+|\/+$/g,''));
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch||'main')}`;
+        const res=await fetch(url,{headers:githubHeaders(false)});
+        if(res.status===404) return [];
+        if(!res.ok) throw new Error('Get contents: HTTP '+res.status);
+        const j=await res.json();
+        return Array.isArray(j)?j:[j];
+      }
+      async function getFileSha(owner, repo, path, branch){
+        const items=await listContents(owner, repo, path, branch);
+        const file=items && items[0] && items[0].type==='file' ? items[0] : null;
+        return file ? file.sha || null : null;
+      }
+      function bufToBase64(buf){ let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.byteLength;i++) binary+=String.fromCharCode(bytes[i]); return btoa(binary); }
+      async function putFile(owner, repo, path, base64Content, message, branch, sha=null){
+        const safePath=encodePathSegments(path);
+        const url=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}`;
+        const body={ message:message||`Add ${path}`, content:base64Content, branch:branch||'main' }; if(sha) body.sha=sha;
+        const res=await fetch(url,{method:'PUT',headers:githubHeaders(true),body:JSON.stringify(body)});
+        if(!res.ok){ const txt=await res.text(); console.warn('PUT failed:',res.status,txt); throw new Error(`Upload zlyhal: ${res.status} ${txt}`); }
+        return res.json();
+      }
+
+      async function tryUploadPhoto(photoId){
+        try{
+          if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName) return;
+          const p=await DB.getPhoto(photoId); if(!p||p.remoteUrl) return; if(!p.blob) return;
+          const path=buildPhotoPath(p, p.name);
+          const base64=bufToBase64(await p.blob.arrayBuffer());
+          const sha=await getFileSha(syncCreds.repoOwner, syncCreds.repoName, path, syncCreds.repoBranch||'main');
+          const res=await putFile(syncCreds.repoOwner, syncCreds.repoName, path, base64, `BOZP: upload ${p.name}`, syncCreds.repoBranch||'main', sha);
+          const remoteUrl=`https://raw.githubusercontent.com/${encodeURIComponent(syncCreds.repoOwner)}/${encodeURIComponent(syncCreds.repoName)}/${encodeURIComponent(syncCreds.repoBranch||'main')}/${res.content.path}`;
+          p.remoteUrl=remoteUrl; p.remoteSha=res.content.sha||null; p.uploadedAt=Date.now();
+          await DB.updatePhoto(p);
+          try{ const tasksViewVisible=!document.getElementById('view-tasks').hidden; if(tasksViewVisible) await loadTasksTable(); }catch(e){}
+        }catch(err){ console.warn('Upload fotky zlyhal:', err?.message||err); }
+      }
+
+      async function uploadPendingPhotos(){
+        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ alert('Nastav GitHub repo a token.'); return; }
+        const all=await DB.listAllPhotos();
+        const pending=all.filter(p=>!p.remoteUrl && p.blob);
+        if(pending.length===0){ alert('Žiadne fotky na dohratie.'); return; }
+        let ok=0,fail=0;
+        for(const p of pending){ try{ await tryUploadPhoto(p.id); ok++; }catch{ fail++; } }
+        alert(`Upload fotiek dokončený. OK: ${ok}, Zlyhané: ${fail}`);
+      }
+
+      // Resync fotiek z repo do lokálnej DB podľa štruktúry: repoFolder/workplace-{ID}/task-{ID}/filename
+      function parseIdFromPrefixed(name, prefix){
+        const re=new RegExp(`^${prefix}-(\\d+)$`);
+        const m=String(name||'').match(re);
+        return m ? Number(m[1]) : null;
+      }
+      async function resyncPhotosFromRepo(){
+        if(!syncCreds?.token||!syncCreds?.repoOwner||!syncCreds?.repoName){ console.warn('Cloud: repo kredencialy nie sú nastavené, preskakujem resync fotiek.'); return; }
+        const owner=syncCreds.repoOwner, repo=syncCreds.repoName, branch=syncCreds.repoBranch||'main';
+        const root=(syncCreds.repoFolder||'bozp-photos').replace(/^\/+|\/+$/g,'');
+        try{
+          const current=await DB.listAllPhotos();
+          const existingUrls=new Set(current.map(p=>p.remoteUrl).filter(Boolean));
+          const availableUrls=new Set(); // zoznam reálne existujúcich URL v repo
+
+          const workplacesDirs=await listContents(owner, repo, root, branch);
+          for(const wDir of workplacesDirs.filter(x=>x.type==='dir')){
+            const wid=parseIdFromPrefixed(wDir.name,'workplace'); if(!wid) continue;
+            const tasksDirs=await listContents(owner, repo, `${root}/${wDir.name}`, branch);
+            for(const tDir of tasksDirs.filter(x=>x.type==='dir')){
+              const tid=parseIdFromPrefixed(tDir.name,'task'); if(!tid) continue;
+              const files=await listContents(owner, repo, `${root}/${wDir.name}/${tDir.name}`, branch);
+              for(const f of files.filter(x=>x.type==='file')){
+                const remoteUrl=f.download_url;
+                if(remoteUrl) availableUrls.add(remoteUrl);
+                if(!remoteUrl || existingUrls.has(remoteUrl)) continue;
+                const dummyFile=new File([new Uint8Array(0)], f.name, { type: 'image/*' });
+                const pid=await DB.addPhoto(tid, wid, null, dummyFile);
+                const p=await DB.getPhoto(pid);
+                p.remoteUrl=remoteUrl; p.remoteSha=f.sha||null; p.uploadedAt=Date.now();
+                await DB.updatePhoto(p);
+                existingUrls.add(remoteUrl);
+              }
+            }
+          }
+
+          // Odstráň referencie na fotky, ktoré už v repo neexistujú
+          for(const p of current){
+            if(p.remoteUrl && !availableUrls.has(p.remoteUrl)){
+              p.remoteUrl=null; p.remoteSha=null; p.uploadedAt=null;
+              await DB.updatePhoto(p);
+            }
+          }
+        }catch(err){
+          console.warn('Resync fotiek z repo zlyhal:', err?.message||err);
+        }
+      }
+
+      async function cloudSave(){
+        if(!syncCreds?.gistId||!syncCreds?.token){ console.warn('Cloud: chýba ID alebo Token – preskakujem uloženie.'); return; }
+        try{
+          setCloudState('Ukladám…');
+          const payload=await DB.exportJSON();
+          const now=Date.now(); payload.meta=payload.meta||{}; payload.meta.updatedAt=now;
+          const body={ files:{[GIST_FILE_NAME]:{ content: JSON.stringify(payload,null,2) }} };
+          const res=await fetch('https://api.github.com/gists/'+encodeURIComponent(syncCreds.gistId),{method:'PATCH',headers:githubHeaders(true),body:JSON.stringify(body)});
+          if(!res.ok){ const txt=await res.text(); throw new Error('Ukladanie zlyhalo: '+txt); }
+          try{ localStorage.setItem(LS_REMOTE_UPDATED_AT,String(now)); }catch{}
+          setCloudState('Uložené');
+        }catch(err){ console.error(err); alert('Cloud: chyba ukladania. '+(err?.message||err)); setCloudState('Chyba ukladania'); }
+      }
+
+      async function cloudRefresh(){
+        await cloudLoad();
+        await resyncPhotosFromRepo();
+        await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); await loadTasksTable();
+      }
+
+      function bindImportExport(){
+        document.getElementById('btn-export-json').addEventListener('click', async ()=>{
+          const data=await DB.exportJSON();
+          const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+          downloadBlob(blob,'bozp_export.json');
+        });
+
+        document.getElementById('btn-import-json').addEventListener('click', async ()=>{
+          const file=document.getElementById('file-import-json').files[0];
+          const status=document.getElementById('json-import-status'); status.textContent='';
+          if(!file){ status.textContent='Vyberte JSON súbor.'; return; }
+          try{
+            const text=await file.text(); const data=JSON.parse(text); await DB.importJSON(data); status.textContent='Import úspešný.';
+            await loadWorkplacesTable(); await refreshFilters(); await fillAssessmentSelector(); updateDashboard(); loadTasksTable();
+          }catch(e){ console.error(e); status.textContent='Chybný JSON súbor.'; }
+        });
+      }
+
+      function openImageViewer(src, alt){
+        viewer.overlay.setAttribute('aria-hidden','false');
+        viewer.mode='fit';
+        viewer.img.src=src; viewer.img.alt=alt||'Náhľad fotky';
+        viewer.img.onerror = ()=>{ console.warn('Náhľad: nepodarilo sa načítať fotku:', src); closeImageViewer(); };
+        if (viewer.img.complete && viewer.img.naturalWidth>0) {
+          enterFit();
+        } else {
+          viewer.img.addEventListener('load', enterFit, {once:true});
+        }
+      }
+      function closeImageViewer(){
+        viewer.overlay.setAttribute('aria-hidden','true');
+        viewer.img.src='';
+        viewer.img.classList.add('fit');
+        viewer.mode='fit';
       }
     })();
   </script>
